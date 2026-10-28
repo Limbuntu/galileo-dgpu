@@ -1,0 +1,15 @@
+#!/bin/sh
+export HOME=/root
+# LXDE session: menu daemon + WM + panel + desktop icons + terminal
+export XDG_CONFIG_DIRS=/etc/xdg
+export XDG_DATA_DIRS=/usr/share
+export XDG_MENU_PREFIX=lxde-
+/usr/libexec/menu-cache/menu-cached >/var/log/menucached.log 2>&1 &
+sleep 1
+DISPLAY=:0 /usr/bin/openbox >/var/log/openbox.log 2>&1 &
+sleep 2
+DISPLAY=:0 /usr/bin/lxpanel >/var/log/lxpanel.log 2>&1 &
+sleep 2
+DISPLAY=:0 /usr/bin/pcmanfm --desktop >/var/log/pcmanfm.log 2>&1 &
+sleep 2
+DISPLAY=:0 xterm -geometry 100x30+8+8 -title console >/var/log/xterm.log 2>&1 &

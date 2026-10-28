@@ -1,0 +1,11 @@
+# 构建产物(在 docker 卷 gres-out,不在本树)
+/dl/
+/output/
+*.o
+*.lo
+*.la
+.DS_Store
+__pycache__/
+# 黄金文件里的运行时产物
+board/intel/galileo/rootfs_overlay_v3/root/doom/.savegame/
+images/

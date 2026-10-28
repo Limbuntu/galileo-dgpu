@@ -1,0 +1,85 @@
+Global {
+    edge=bottom
+    allign=left
+    margin=0
+    widthtype=percent
+    width=100
+    height=28
+    transparent=0
+    tintcolor=#000000
+    alpha=180
+    setdocktype=1
+    setpartialstrut=1
+    usefontcolor=1
+    fontcolor=#ffffff
+    background=1
+    backgroundfile=/usr/share/lxpanel/images/background.png
+}
+
+Plugin {
+    type = menu
+    Config {
+        image=/usr/share/lxpanel/images/my-computer.png
+        system {
+        }
+        separator {
+        }
+        item {
+            command=run
+        }
+        separator {
+        }
+        item {
+            command=logout
+        }
+    }
+}
+
+Plugin {
+    type = launchbar
+    Config {
+        Button {
+            id=/usr/share/applications/xterm.desktop
+        }
+        Button {
+            id=/usr/share/applications/pcmanfm.desktop
+        }
+        Button {
+            id=/usr/share/applications/netsurf.desktop
+        }
+        Button {
+            id=/usr/share/applications/minetest.desktop
+        }
+    }
+}
+
+Plugin {
+    type = wincmd
+    Config {
+        Button1=iconify
+        Button2=shade
+    }
+}
+
+Plugin {
+    type = taskbar
+    expand=1
+    Config {
+        tooltips=1
+        IconsOnly=0
+        MaxTaskWidth=150
+    }
+}
+
+Plugin {
+    type = cpu
+}
+
+Plugin {
+    type = dclock
+    Config {
+        ClockFmt=%R
+        TooltipFmt=%A %x
+        BoldFont=0
+    }
+}

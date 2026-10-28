@@ -1,0 +1,241 @@
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 05:19:28: WARNING[Main]: Client: Could not find X11 Display in ExposedVideoData
+2001-01-01 05:19:28: WARNING[Main]: Could not load icon file '/usr/share/icons/hicolor/128x128/apps/minetest.png'
+2001-01-01 05:19:28: WARNING[Main]: Could not load icon file '/usr/share/minetest/misc/minetest-xorg-icon-128.png'
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 06:38:16: WARNING[Main]: Client: Could not find X11 Display in ExposedVideoData
+2001-01-01 06:38:17: WARNING[Main]: Could not find x11 display for setting its icon.
+2001-01-01 06:38:17: WARNING[Main]: Could not load icon file '/usr/share/minetest/misc/minetest-xorg-icon-128.png'
+2001-01-01 06:38:49: ACTION[Main]: World at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 06:38:49: ACTION[Main]: Server for gameid="minetest" listening on 0.0.0.0:50998.
+2001-01-01 06:42:23: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:23: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:24: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:27: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:27: WARNING[Main]: Irrlicht: Performance warning, slow unlock of non power of 2 texture.
+2001-01-01 06:42:34: ACTION[Server]: singleplayer [127.0.0.1] joins game. List of players: singleplayer
+2001-01-01 06:42:44: WARNING[Server]: active block modifiers took 207ms (processed 23 of 209 active blocks)
+2001-01-01 06:43:06: WARNING[Server]: active block modifiers took 208ms (processed 23 of 209 active blocks)
+2001-01-01 06:43:07: WARNING[Server]: active block modifiers took 210ms (processed 27 of 209 active blocks)
+2001-01-01 06:43:07: WARNING[Server]: active block modifiers took 212ms (processed 37 of 209 active blocks)
+2001-01-01 06:43:08: WARNING[Server]: active block modifiers took 205ms (processed 35 of 209 active blocks)
+2001-01-01 06:43:08: WARNING[Server]: active block modifiers took 202ms (processed 43 of 209 active blocks)
+2001-01-01 06:43:09: WARNING[Server]: active block modifiers took 206ms (processed 63 of 209 active blocks)
+2001-01-01 06:43:09: WARNING[Server]: active block modifiers took 206ms (processed 102 of 209 active blocks)
+2001-01-01 06:43:10: WARNING[Server]: active block modifiers took 202ms (processed 140 of 209 active blocks)
+2001-01-01 06:43:35: WARNING[Server]: active block modifiers took 201ms (processed 19 of 209 active blocks)
+2001-01-01 06:43:48: WARNING[Server]: active block modifiers took 206ms (processed 22 of 209 active blocks)
+2001-01-01 06:43:53: WARNING[Server]: active block modifiers took 205ms (processed 26 of 209 active blocks)
+2001-01-01 06:44:02: WARNING[Server]: active block modifiers took 219ms (processed 13 of 209 active blocks)
+2001-01-01 06:44:26: WARNING[Server]: active block modifiers took 208ms (processed 26 of 230 active blocks)
+2001-01-01 06:44:31: WARNING[Server]: active block modifiers took 207ms (processed 24 of 230 active blocks)
+2001-01-01 06:44:43: WARNING[Server]: active block modifiers took 220ms (processed 24 of 230 active blocks)
+2001-01-01 06:44:55: WARNING[Server]: active block modifiers took 218ms (processed 24 of 230 active blocks)
+2001-01-01 06:45:28: WARNING[Server]: active block modifiers took 204ms (processed 22 of 230 active blocks)
+2001-01-01 06:45:28: WARNING[Server]: active block modifiers took 210ms (processed 19 of 230 active blocks)
+2001-01-01 06:45:32: WARNING[Server]: active block modifiers took 219ms (processed 34 of 230 active blocks)
+2001-01-01 06:45:41: WARNING[Server]: active block modifiers took 206ms (processed 33 of 230 active blocks)
+2001-01-01 06:45:49: WARNING[Server]: active block modifiers took 203ms (processed 50 of 230 active blocks)
+2001-01-01 06:45:53: WARNING[Server]: active block modifiers took 202ms (processed 40 of 230 active blocks)
+2001-01-01 06:46:22: ACTION[Main]: Server: Shutting down
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 06:47:05: [Main]: Automatically selecting world at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 06:47:05: WARNING[Main]: Client: Could not find X11 Display in ExposedVideoData
+2001-01-01 06:47:05: WARNING[Main]: Could not find x11 display for setting its icon.
+2001-01-01 06:47:05: WARNING[Main]: Could not load icon file '/usr/share/minetest/misc/minetest-xorg-icon-128.png'
+2001-01-01 06:47:16: ERROR[Main]: Please choose a name!
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 06:47:45: [Main]: Automatically selecting world at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 06:47:46: WARNING[Main]: Client: Could not find X11 Display in ExposedVideoData
+2001-01-01 06:47:46: WARNING[Main]: Could not find x11 display for setting its icon.
+2001-01-01 06:47:46: WARNING[Main]: Could not load icon file '/usr/share/minetest/misc/minetest-xorg-icon-128.png'
+2001-01-01 06:48:27: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture progress_bar.png reformat 256x48 -> 256x32,3
+2001-01-01 06:48:27: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture progress_bar_bg.png reformat 256x48 -> 256x32,3
+2001-01-01 06:48:40: ACTION[Main]: World at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 06:48:40: ACTION[Main]: Server for gameid="minetest" listening on 0.0.0.0:62393.
+2001-01-01 06:48:56: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture progress_bar.png reformat 256x48 -> 256x32,3
+2001-01-01 06:48:56: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture progress_bar_bg.png reformat 256x48 -> 256x32,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png reformat 16x96 -> 16x64,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png^[applyfiltersformesh reformat 16x96 -> 16x64,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png^[verticalframe:4:0^[applyfiltersformesh reformat 16x24 -> 16x16,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png^[verticalframe:4:1^[applyfiltersformesh reformat 16x24 -> 16x16,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png^[verticalframe:4:2^[applyfiltersformesh reformat 16x24 -> 16x16,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture fireflies_bottle_animated.png^[verticalframe:4:3^[applyfiltersformesh reformat 16x24 -> 16x16,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_wood.png reformat 38x32 -> 32x32,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_wood.png^[applyfiltersformesh reformat 38x32 -> 32x32,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_steel.png reformat 38x32 -> 32x32,3
+2001-01-01 06:49:23: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_steel.png^[applyfiltersformesh reformat 38x32 -> 32x32,3
+2001-01-01 06:49:24: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_glass.png reformat 38x32 -> 32x32,3
+2001-01-01 06:49:24: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_glass.png^[applyfiltersformesh reformat 38x32 -> 32x32,3
+2001-01-01 06:49:24: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_obsidian_glass.png reformat 38x32 -> 32x32,3
+2001-01-01 06:49:24: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture doors_door_obsidian_glass.png^[applyfiltersformesh reformat 38x32 -> 32x32,3
+2001-01-01 06:49:26: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture xpanes_door_steel_bar.png reformat 38x32 -> 32x32,3
+2001-01-01 06:49:26: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture xpanes_door_steel_bar.png^[applyfiltersformesh reformat 38x32 -> 32x32,3
+2001-01-01 06:49:32: ACTION[Server]: singleplayer [127.0.0.1] joins game. List of players: singleplayer
+2001-01-01 06:49:38: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture sunrisebg.png^[applyfiltersformesh reformat 240x40 -> 128x32,3
+2001-01-01 06:49:38: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture crack_anylength.png reformat 16x80 -> 16x64,3
+2001-01-01 06:49:39: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture gui_hotbar.png reformat 596x78 -> 512x64,3
+2001-01-01 06:49:40: WARNING[Main]: Irrlicht: Burningvideo: Warning Texture gui_hotbar_selected.png reformat 84x84 -> 64x64,3
+2001-01-01 06:49:41: WARNING[Server]: active block modifiers took 204ms (processed 29 of 61 active blocks)
+2001-01-01 06:49:41: WARNING[Server]: active block modifiers took 208ms (processed 35 of 63 active blocks)
+2001-01-01 06:49:45: WARNING[Server]: active block modifiers took 209ms (processed 28 of 162 active blocks)
+2001-01-01 06:49:49: WARNING[Server]: active block modifiers took 209ms (processed 38 of 230 active blocks)
+2001-01-01 06:49:54: WARNING[Server]: active block modifiers took 202ms (processed 46 of 230 active blocks)
+2001-01-01 06:49:58: WARNING[Server]: active block modifiers took 201ms (processed 49 of 230 active blocks)
+2001-01-01 06:50:05: WARNING[Server]: active block modifiers took 202ms (processed 70 of 230 active blocks)
+2001-01-01 06:50:10: WARNING[Server]: active block modifiers took 209ms (processed 93 of 230 active blocks)
+2001-01-01 06:50:13: WARNING[Server]: active block modifiers took 207ms (processed 61 of 230 active blocks)
+2001-01-01 06:50:22: WARNING[Server]: active block modifiers took 202ms (processed 124 of 230 active blocks)
+2001-01-01 06:50:42: WARNING[Server]: active block modifiers took 206ms (processed 90 of 230 active blocks)
+2001-01-01 06:50:48: WARNING[Server]: active block modifiers took 201ms (processed 144 of 251 active blocks)
+2001-01-01 06:51:00: WARNING[Server]: active block modifiers took 205ms (processed 95 of 251 active blocks)
+2001-01-01 06:51:14: WARNING[Server]: active block modifiers took 206ms (processed 99 of 251 active blocks)
+2001-01-01 06:51:23: WARNING[Server]: active block modifiers took 203ms (processed 177 of 251 active blocks)
+2001-01-01 06:51:28: WARNING[Server]: active block modifiers took 206ms (processed 50 of 251 active blocks)
+2001-01-01 06:51:33: WARNING[Server]: active block modifiers took 203ms (processed 54 of 251 active blocks)
+2001-01-01 06:51:56: WARNING[Server]: active block modifiers took 201ms (processed 89 of 251 active blocks)
+2001-01-01 06:52:02: WARNING[Server]: active block modifiers took 208ms (processed 42 of 251 active blocks)
+2001-01-01 06:52:07: WARNING[Server]: active block modifiers took 202ms (processed 111 of 251 active blocks)
+2001-01-01 06:52:11: WARNING[Server]: active block modifiers took 202ms (processed 180 of 251 active blocks)
+2001-01-01 06:52:20: WARNING[Server]: active block modifiers took 202ms (processed 180 of 251 active blocks)
+2001-01-01 06:52:32: WARNING[Server]: active block modifiers took 201ms (processed 105 of 251 active blocks)
+2001-01-01 06:52:42: WARNING[Server]: active block modifiers took 215ms (processed 68 of 251 active blocks)
+2001-01-01 06:52:56: ACTION[Main]: Server: Shutting down
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 06:55:10: [Main]: Automatically selecting world at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 06:55:10: WARNING[Main]: Irrlicht: No GLX support available. OpenGL driver will not work.
+2001-01-01 06:55:10: ERROR[Main]: Irrlicht: Fatal error, could not get visual.
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 07:08:18: [Main]: Automatically selecting world at [/root/.minetest/worlds/Unnamed79761]
+
+
+-------------
+  Separator
+-------------
+
+2001-01-01 07:09:31: [Main]: Automatically selecting world at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 07:10:29: ACTION[Main]: World at [/root/.minetest/worlds/Unnamed79761]
+2001-01-01 07:10:29: ACTION[Main]: Server for gameid="minetest" listening on 0.0.0.0:63157.
+2001-01-01 07:11:22: ACTION[Server]: singleplayer [127.0.0.1] joins game. List of players: singleplayer
+2001-01-01 07:11:31: WARNING[Server]: active block modifiers took 207ms (processed 22 of 40 active blocks)
+2001-01-01 07:11:33: WARNING[Server]: active block modifiers took 202ms (processed 24 of 90 active blocks)
+2001-01-01 07:11:34: WARNING[Server]: active block modifiers took 208ms (processed 68 of 90 active blocks)
+2001-01-01 07:11:35: WARNING[Server]: active block modifiers took 202ms (processed 57 of 112 active blocks)
+2001-01-01 07:11:37: WARNING[Server]: active block modifiers took 215ms (processed 78 of 165 active blocks)
+2001-01-01 07:11:38: WARNING[Server]: active block modifiers took 205ms (processed 66 of 165 active blocks)
+2001-01-01 07:11:40: WARNING[Server]: active block modifiers took 211ms (processed 73 of 175 active blocks)
+2001-01-01 07:11:41: WARNING[Server]: active block modifiers took 214ms (processed 41 of 217 active blocks)
+2001-01-01 07:11:41: WARNING[Server]: active block modifiers took 206ms (processed 106 of 217 active blocks)
+2001-01-01 07:11:43: WARNING[Server]: active block modifiers took 201ms (processed 98 of 250 active blocks)
+2001-01-01 07:11:43: WARNING[Server]: active block modifiers took 203ms (processed 49 of 250 active blocks)
+2001-01-01 07:11:50: WARNING[Server]: active block modifiers took 218ms (processed 89 of 250 active blocks)
+2001-01-01 07:11:50: WARNING[Server]: active block modifiers took 201ms (processed 169 of 204 active blocks)
+2001-01-01 07:11:59: WARNING[Server]: active block modifiers took 211ms (processed 40 of 204 active blocks)
+2001-01-01 07:12:02: WARNING[Server]: active block modifiers took 205ms (processed 62 of 204 active blocks)
+2001-01-01 07:12:07: WARNING[Server]: active block modifiers took 201ms (processed 131 of 204 active blocks)
+2001-01-01 07:12:08: WARNING[Server]: active block modifiers took 207ms (processed 63 of 204 active blocks)
+2001-01-01 07:12:14: WARNING[Server]: active block modifiers took 205ms (processed 71 of 204 active blocks)
+2001-01-01 07:12:16: WARNING[Server]: active block modifiers took 206ms (processed 103 of 204 active blocks)
+2001-01-01 07:12:21: WARNING[Server]: active block modifiers took 201ms (processed 60 of 204 active blocks)
+2001-01-01 07:12:23: WARNING[Server]: active block modifiers took 204ms (processed 63 of 188 active blocks)
+2001-01-01 07:12:26: WARNING[Server]: active block modifiers took 202ms (processed 179 of 188 active blocks)
+2001-01-01 07:12:33: WARNING[Server]: active block modifiers took 214ms (processed 74 of 188 active blocks)
+2001-01-01 07:12:40: WARNING[Server]: active block modifiers took 207ms (processed 63 of 188 active blocks)
+2001-01-01 07:12:41: WARNING[Server]: active block modifiers took 204ms (processed 82 of 188 active blocks)
+2001-01-01 07:12:46: WARNING[Server]: active block modifiers took 212ms (processed 46 of 188 active blocks)
+2001-01-01 07:12:49: WARNING[Server]: active block modifiers took 202ms (processed 119 of 188 active blocks)
+2001-01-01 07:12:51: WARNING[Server]: active block modifiers took 203ms (processed 86 of 188 active blocks)
+2001-01-01 07:12:52: WARNING[Server]: active block modifiers took 212ms (processed 88 of 188 active blocks)
+2001-01-01 07:12:54: WARNING[Server]: active block modifiers took 205ms (processed 102 of 188 active blocks)
+2001-01-01 07:12:57: WARNING[Server]: active block modifiers took 206ms (processed 85 of 188 active blocks)
+2001-01-01 07:13:00: WARNING[Server]: active block modifiers took 205ms (processed 101 of 188 active blocks)
+2001-01-01 07:13:01: WARNING[Server]: active block modifiers took 206ms (processed 88 of 188 active blocks)
+2001-01-01 07:13:02: WARNING[Server]: active block modifiers took 210ms (processed 52 of 188 active blocks)
+2001-01-01 07:13:03: ERROR[Emerge-0]: EmergeThread::finishGen: Couldn't grab block we just generated: (-3,3,2)
+2001-01-01 07:13:05: WARNING[Server]: active block modifiers took 206ms (processed 197 of 226 active blocks)
+2001-01-01 07:13:09: WARNING[Server]: active block modifiers took 201ms (processed 239 of 246 active blocks)
+2001-01-01 07:13:19: WARNING[Server]: active block modifiers took 204ms (processed 27 of 246 active blocks)
+2001-01-01 07:13:20: WARNING[Server]: active block modifiers took 207ms (processed 245 of 246 active blocks)
+2001-01-01 07:13:26: WARNING[Server]: active block modifiers took 204ms (processed 61 of 246 active blocks)
+2001-01-01 07:13:27: WARNING[Server]: active block modifiers took 206ms (processed 133 of 246 active blocks)
+2001-01-01 07:13:28: WARNING[Server]: active block modifiers took 208ms (processed 103 of 246 active blocks)
+2001-01-01 07:13:31: WARNING[Server]: active block modifiers took 202ms (processed 81 of 246 active blocks)
+2001-01-01 07:13:33: WARNING[Server]: active block modifiers took 205ms (processed 129 of 246 active blocks)
+2001-01-01 07:13:36: WARNING[Server]: active block modifiers took 214ms (processed 64 of 246 active blocks)
+2001-01-01 07:13:39: WARNING[Server]: active block modifiers took 207ms (processed 71 of 246 active blocks)
+2001-01-01 07:13:42: WARNING[Server]: active block modifiers took 212ms (processed 148 of 246 active blocks)
+2001-01-01 07:13:45: WARNING[Server]: active block modifiers took 207ms (processed 46 of 246 active blocks)
+2001-01-01 07:13:52: WARNING[Server]: active block modifiers took 202ms (processed 243 of 251 active blocks)
+2001-01-01 07:13:54: WARNING[Server]: active block modifiers took 210ms (processed 80 of 251 active blocks)
+2001-01-01 07:13:57: WARNING[Server]: active block modifiers took 202ms (processed 52 of 251 active blocks)
+2001-01-01 07:13:59: WARNING[Server]: active block modifiers took 201ms (processed 66 of 251 active blocks)
+2001-01-01 07:14:01: WARNING[Server]: active block modifiers took 208ms (processed 164 of 251 active blocks)
+2001-01-01 07:14:02: WARNING[Server]: active block modifiers took 202ms (processed 68 of 251 active blocks)
+2001-01-01 07:14:05: WARNING[Server]: active block modifiers took 205ms (processed 140 of 251 active blocks)
+2001-01-01 07:14:07: WARNING[Server]: active block modifiers took 205ms (processed 65 of 251 active blocks)
+2001-01-01 07:14:11: WARNING[Server]: active block modifiers took 201ms (processed 47 of 251 active blocks)
+2001-01-01 07:14:12: WARNING[Server]: active block modifiers took 205ms (processed 158 of 251 active blocks)
+2001-01-01 07:14:16: WARNING[Server]: active block modifiers took 201ms (processed 94 of 251 active blocks)
+2001-01-01 07:14:17: WARNING[Server]: active block modifiers took 205ms (processed 78 of 251 active blocks)
+2001-01-01 07:14:19: WARNING[Server]: active block modifiers took 206ms (processed 124 of 251 active blocks)
+2001-01-01 07:14:21: WARNING[Server]: active block modifiers took 202ms (processed 223 of 251 active blocks)
+2001-01-01 07:14:21: WARNING[Server]: active block modifiers took 201ms (processed 138 of 251 active blocks)
+2001-01-01 07:14:22: WARNING[Server]: active block modifiers took 203ms (processed 111 of 251 active blocks)
+2001-01-01 07:14:23: WARNING[Server]: active block modifiers took 202ms (processed 198 of 251 active blocks)
+2001-01-01 07:14:24: WARNING[Server]: active block modifiers took 208ms (processed 89 of 251 active blocks)
+2001-01-01 07:14:26: WARNING[Server]: active block modifiers took 201ms (processed 203 of 251 active blocks)
+2001-01-01 07:14:27: WARNING[Server]: active block modifiers took 201ms (processed 126 of 251 active blocks)
+2001-01-01 07:14:28: WARNING[Server]: active block modifiers took 205ms (processed 155 of 251 active blocks)
+2001-01-01 07:14:29: WARNING[Server]: active block modifiers took 205ms (processed 96 of 251 active blocks)
+2001-01-01 07:14:30: WARNING[Server]: active block modifiers took 201ms (processed 162 of 251 active blocks)
+2001-01-01 07:14:31: WARNING[Server]: active block modifiers took 201ms (processed 114 of 251 active blocks)
+2001-01-01 07:14:32: WARNING[Server]: active block modifiers took 201ms (processed 214 of 251 active blocks)
+2001-01-01 07:14:34: WARNING[Server]: active block modifiers took 207ms (processed 73 of 251 active blocks)
+2001-01-01 07:14:34: WARNING[Server]: active block modifiers took 206ms (processed 211 of 251 active blocks)
+2001-01-01 07:14:36: WARNING[Server]: active block modifiers took 201ms (processed 109 of 251 active blocks)
+2001-01-01 07:14:37: WARNING[Server]: active block modifiers took 205ms (processed 174 of 251 active blocks)
+2001-01-01 07:14:37: WARNING[Server]: active block modifiers took 202ms (processed 154 of 251 active blocks)
+2001-01-01 07:14:40: WARNING[Server]: active block modifiers took 206ms (processed 119 of 251 active blocks)
+2001-01-01 07:14:41: WARNING[Server]: active block modifiers took 206ms (processed 72 of 251 active blocks)
+2001-01-01 07:14:42: WARNING[Server]: active block modifiers took 202ms (processed 123 of 251 active blocks)
+2001-01-01 07:14:46: WARNING[Server]: active block modifiers took 205ms (processed 134 of 251 active blocks)
+2001-01-01 07:14:47: WARNING[Server]: active block modifiers took 206ms (processed 49 of 251 active blocks)
+2001-01-01 07:14:53: WARNING[Server]: active block modifiers took 201ms (processed 47 of 251 active blocks)
+2001-01-01 07:14:55: WARNING[Server]: active block modifiers took 201ms (processed 102 of 251 active blocks)
+2001-01-01 07:15:04: ACTION[Main]: Server: Shutting down

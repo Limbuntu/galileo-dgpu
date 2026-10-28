@@ -1,0 +1,13 @@
+#!/bin/sh
+# doom: switch to fbcon, run Doom, restore desktop afterwards.
+killall Xorg openbox xterm 2>/dev/null
+sleep 2
+cd /root/doom
+./doomgeneric -iwad freedoom1.wad
+# Doom exited: bring the desktop back
+rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
+/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
+sleep 8
+DISPLAY=:0 /usr/bin/openbox >/var/log/openbox.log 2>&1 &
+sleep 2
+DISPLAY=:0 xterm -geometry 100x30+8+8 -title console >/var/log/xterm.log 2>&1 &

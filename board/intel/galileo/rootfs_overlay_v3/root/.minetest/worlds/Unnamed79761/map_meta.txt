@@ -1,0 +1,191 @@
+mgv7_np_dungeons = {
+	persistence = 0.8
+	flags = defaults
+	lacunarity = 2
+	scale = 0.5
+	spread = (500,500,500)
+	seed = 0
+	offset = 0.9
+	octaves = 2
+}
+mgv7_np_cave2 = {
+	persistence = 0.5
+	flags = defaults
+	lacunarity = 2
+	scale = 12
+	spread = (67,67,67)
+	seed = 10325
+	offset = 0
+	octaves = 3
+}
+mgv7_np_cavern = {
+	persistence = 0.63
+	flags = defaults
+	lacunarity = 2
+	scale = 1
+	spread = (384,128,384)
+	seed = 723
+	offset = 0
+	octaves = 5
+}
+mgv7_np_ridge = {
+	persistence = 0.75
+	flags = defaults
+	lacunarity = 2
+	scale = 1
+	spread = (100,100,100)
+	seed = 6467
+	offset = 0
+	octaves = 4
+}
+mgv7_np_ridge_uwater = {
+	persistence = 0.6
+	flags = defaults
+	lacunarity = 2
+	scale = 1
+	spread = (1000,1000,1000)
+	seed = 85039
+	offset = 0
+	octaves = 5
+}
+mgv7_np_mount_height = {
+	persistence = 0.6
+	flags = defaults
+	lacunarity = 2
+	scale = 112
+	spread = (1000,1000,1000)
+	seed = 72449
+	offset = 256
+	octaves = 3
+}
+mgv7_np_height_select = {
+	persistence = 0.7
+	flags = defaults
+	lacunarity = 2
+	scale = 16
+	spread = (500,500,500)
+	seed = 4213
+	offset = -8
+	octaves = 6
+}
+mgv7_np_filler_depth = {
+	persistence = 0.7
+	flags = defaults
+	lacunarity = 2
+	scale = 1.2
+	spread = (150,150,150)
+	seed = 261
+	offset = 0
+	octaves = 3
+}
+mgv7_np_terrain_persist = {
+	persistence = 0.6
+	flags = defaults
+	lacunarity = 2
+	scale = 0.1
+	spread = (2000,2000,2000)
+	seed = 539
+	offset = 0.6
+	octaves = 3
+}
+mgv7_dungeon_ymax = 31000
+mgv7_np_mountain = {
+	persistence = 0.63
+	flags = defaults
+	lacunarity = 2
+	scale = 1
+	spread = (250,350,250)
+	seed = 5333
+	offset = -0.6
+	octaves = 5
+}
+mg_biome_np_humidity_blend = {
+	persistence = 1
+	flags = defaults
+	lacunarity = 2
+	scale = 1.5
+	spread = (8,8,8)
+	seed = 90003
+	offset = 0
+	octaves = 2
+}
+mgv7_np_terrain_base = {
+	persistence = 0.6
+	flags = defaults
+	lacunarity = 2
+	scale = 70
+	spread = (600,600,600)
+	seed = 82341
+	offset = 4
+	octaves = 5
+}
+mgv7_spflags = mountains, ridges, nofloatlands, caverns
+mgv7_mount_zero_level = 0
+mgv7_large_cave_depth = -33
+mg_name = v7
+mg_biome_np_humidity = {
+	persistence = 0.5
+	flags = defaults
+	lacunarity = 2
+	scale = 50
+	spread = (1000,1000,1000)
+	seed = 842
+	offset = 50
+	octaves = 3
+}
+chunksize = 5
+mgv7_large_cave_num_max = 2
+mg_flags = caves, dungeons, light, decorations, biomes
+water_level = 1
+mapgen_limit = 31000
+mgv7_small_cave_num_min = 0
+mgv7_small_cave_num_max = 0
+mgv7_large_cave_flooded = 0.5
+mgv7_np_terrain_alt = {
+	persistence = 0.6
+	flags = defaults
+	lacunarity = 2
+	scale = 25
+	spread = (600,600,600)
+	seed = 5934
+	offset = 4
+	octaves = 5
+}
+mg_biome_np_heat = {
+	persistence = 0.5
+	flags = defaults
+	lacunarity = 2
+	scale = 50
+	spread = (1000,1000,1000)
+	seed = 5349
+	offset = 50
+	octaves = 3
+}
+mgv7_large_cave_num_min = 0
+mgv7_np_cave1 = {
+	persistence = 0.5
+	flags = defaults
+	lacunarity = 2
+	scale = 12
+	spread = (61,61,61)
+	seed = 52534
+	offset = 0
+	octaves = 3
+}
+seed = 17205678493358277315
+mgv7_cavern_limit = -256
+mgv7_cavern_taper = 256
+mgv7_cave_width = 0.09
+mgv7_cavern_threshold = 0.7
+mg_biome_np_heat_blend = {
+	persistence = 1
+	flags = defaults
+	lacunarity = 2
+	scale = 1.5
+	spread = (8,8,8)
+	seed = 13
+	offset = 0
+	octaves = 2
+}
+mgv7_dungeon_ymin = -31000
+[end_of_params]

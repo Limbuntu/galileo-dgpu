@@ -1,0 +1,21 @@
+#!/bin/sh
+# S45netfallback: if DHCP did not provide an address, fall back to a fixed
+# IP so the board can be reached by direct laptop<->board ethernet cable.
+# Laptop side: set 192.168.7.1/24, then: ssh root@192.168.7.2
+
+case "$1" in
+	start)
+		# give udhcpc (S40network) 20 seconds
+		sleep 20
+		if ifconfig eth0 2>/dev/null | grep -q "inet addr:"; then
+			exit 0
+		fi
+		echo "S45netfallback: no DHCP lease, configuring 192.168.7.2/24 on eth0"
+		ifconfig eth0 192.168.7.2 netmask 255.255.255.0 up
+		# keep retrying DHCP in the background; it will override if a
+		# lease eventually arrives
+		udhcpc -i eth0 -n -q -t 3 -T 5 >/dev/null 2>&1 &
+		;;
+	stop|restart|reload)
+		;;
+esac

@@ -1,0 +1,8 @@
+[Icon Theme]
+Name=Hicolor
+Directories=48x48/apps
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Threshold

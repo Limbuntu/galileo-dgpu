@@ -1,0 +1,14 @@
+#!/bin/sh
+# S46timesync: sync clock after network is up (board has no RTC battery)
+case "$1" in
+  start)
+    (
+      sleep 12
+      for i in 1 2 3; do
+        /usr/bin/httpstime www.baidu.com >/dev/null 2>&1 && break
+        /usr/bin/httpstime mirrors.tuna.tsinghua.edu.cn >/dev/null 2>&1 && break
+        sleep 8
+      done
+    ) &
+    ;;
+esac

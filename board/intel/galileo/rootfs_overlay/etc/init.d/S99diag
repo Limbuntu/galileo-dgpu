@@ -1,0 +1,43 @@
+#!/bin/sh
+# S99diag: black-box diagnostics. Serial-less debugging: write full system
+# state to the FAT boot partition (partition 1) so it can be read on any
+# computer by pulling the SD card.
+
+DIAG=/mnt/diag.txt
+
+case "$1" in
+	start)
+		mkdir -p /mnt
+		mount -t vfat /dev/mmcblk0p1 /mnt 2>/dev/null || exit 0
+		{
+			echo "===== Galileo RX580/HD6450 diag $(date) ====="
+			echo "--- uname ---"; uname -a
+			echo "--- uptime/load ---"; cat /proc/uptime
+			echo "--- board ---"; cat /sys/devices/virtual/dmi/id/board_name 2>/dev/null
+			echo "--- memory ---"; cat /proc/meminfo | head -4
+			echo "--- network interfaces ---"; ifconfig -a 2>/dev/null
+			echo "--- ip addr ---"; ip addr 2>/dev/null
+			echo "--- routes ---"; route -n 2>/dev/null
+			echo "--- loaded modules ---"; lsmod
+			echo "--- /dev/dri ---"; ls -la /dev/dri 2>/dev/null || echo "MISSING /dev/dri"
+			echo "--- drm connectors ---"
+			for c in /sys/class/drm/card*-*/status; do
+				[ -e "$c" ] && echo "$c: $(cat $c)"
+			done
+			echo "--- pci devices ---"
+			for d in /sys/bus/pci/devices/*; do
+				[ -e "$d" ] || continue
+				v=$(cat $d/vendor); dev=$(cat $d/device)
+				echo "$d $v:$dev class=$(cat $d/class)"
+			done
+			echo "--- swap ---"; cat /proc/swaps
+			echo "--- X.log tail ---"; tail -30 /var/log/X.log 2>/dev/null
+			echo "--- dmesg ---"; dmesg
+			echo "===== end diag ====="
+		} > "$DIAG" 2>&1
+		sync
+		umount /mnt 2>/dev/null
+		;;
+	stop|restart|reload)
+		;;
+esac

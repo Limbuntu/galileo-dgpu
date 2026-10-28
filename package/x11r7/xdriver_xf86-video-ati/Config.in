@@ -1,0 +1,12 @@
+config BR2_PACKAGE_XDRIVER_XF86_VIDEO_ATI
+	bool "xf86-video-ati"
+	select BR2_PACKAGE_LIBDRM
+	select BR2_PACKAGE_LIBDRM_RADEON
+	select BR2_PACKAGE_XLIB_LIBXCOMPOSITE
+	select BR2_PACKAGE_XORGPROTO
+	help
+	  ATI video driver
+
+	  Patched: mesa3d dependency dropped. We only need the EXA 2D path
+	  (libdrm_radeon); DRI is auto-disabled by configure when mesa is
+	  absent, glamor is disabled without EGL/GL.

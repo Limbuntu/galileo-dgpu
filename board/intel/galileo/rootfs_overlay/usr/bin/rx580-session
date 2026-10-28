@@ -1,0 +1,4 @@
+#!/bin/sh
+# Minimal GPU session: openbox WM + one xterm.
+xterm -geometry 100x30+8+8 -title console &
+exec openbox

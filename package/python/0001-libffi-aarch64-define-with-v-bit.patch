@@ -1,0 +1,25 @@
+--- a/Modules/_ctypes/libffi/src/aarch64/sysv.S
++++ b/Modules/_ctypes/libffi/src/aarch64/sysv.S
+@@ -23,6 +23,22 @@
+ #include <fficonfig.h>
+ #include <ffi.h>
+
++/* Local definitions for aarch64 assembly: modern gas requires these
++ * constants to be defined at preprocessing time (values match
++ * src/aarch64/ffitarget.h). */
++#ifndef AARCH64_FFI_WITH_V_BIT
++#define AARCH64_FFI_WITH_V_BIT 0
++#endif
++#ifndef AARCH64_N_XREG
++#define AARCH64_N_XREG 32
++#endif
++#ifndef AARCH64_N_VREG
++#define AARCH64_N_VREG 32
++#endif
++#ifndef AARCH64_CALL_CONTEXT_SIZE
++#define AARCH64_CALL_CONTEXT_SIZE (AARCH64_N_XREG * 8 + AARCH64_N_VREG * 16)
++#endif
++
+ #ifdef HAVE_MACHINE_ASM_H
+ #include <machine/asm.h>
+ #else

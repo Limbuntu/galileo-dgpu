@@ -1,0 +1,26 @@
+<Menu>
+  <Name>Applications</Name>
+  <Directory>lxde-Applications.directory</Directory>
+  <DefaultAppDirs/>
+  <DefaultDirectoryDirs/>
+  <Menu>
+    <Name>Accessories</Name>
+    <Directory>lxde-Accessories.directory</Directory>
+    <Include><Category>Utility</Category></Include>
+  </Menu>
+  <Menu>
+    <Name>Network</Name>
+    <Directory>lxde-Network.directory</Directory>
+    <Include><Category>Network</Category></Include>
+  </Menu>
+  <Menu>
+    <Name>Games</Name>
+    <Directory>lxde-Games.directory</Directory>
+    <Include><Category>Game</Category></Include>
+  </Menu>
+  <Menu>
+    <Name>System</Name>
+    <Directory>lxde-System.directory</Directory>
+    <Include><Category>System</Category></Include>
+  </Menu>
+</Menu>

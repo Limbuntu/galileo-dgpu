@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <menu id="root-menu" label="Main Menu">
+    <item label="Terminal"><action name="Execute"><execute>xterm</execute></action></item>
+    <item label="File Manager"><action name="Execute"><execute>pcmanfm</execute></action></item>
+    <item label="Web Browser"><action name="Execute"><execute>links -g</execute></action></item>
+    <separator/>
+    <item label="Minetest"><action name="Execute"><execute>minetest</execute></action></item>
+    <item label="Doom"><action name="Execute"><execute>doom</execute></action></item>
+    <separator/>
+    <item label="Restart Desktop"><action name="Execute"><execute>lxde-session</execute></action></item>
+  </menu>
+</openbox_menu>

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Web Browser
+Exec=links -g
+Icon=links
+Categories=Network;WebBrowser;

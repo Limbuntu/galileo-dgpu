@@ -1,0 +1,48 @@
+#!/bin/sh
+# S50desktop (nvidia): nouveau + X + lxde-session
+SWAPFILE=/swapfile
+
+start_x() {
+	rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
+	/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
+	sleep 8
+	n=0
+	while [ $n -lt 15 ] && ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; do
+		sleep 2
+		n=$((n+1))
+	done
+	if ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; then
+		echo "S50desktop: Xorg failed to start, see /var/log/X.log"
+		return 1
+	fi
+	(
+		n=0
+		while [ $n -lt 15 ]; do
+			DISPLAY=:0 /usr/bin/lxde-session >/var/log/lxde-session.log 2>&1
+			sleep 2
+			ps | grep -v grep | grep openbox >/dev/null 2>&1 && break
+			n=$((n+1))
+		done
+	) &
+	echo "S50desktop: desktop up on /dev/dri/card0"
+}
+
+case "$1" in
+	start)
+		if [ ! -f "$SWAPFILE" ]; then
+			dd if=/dev/zero of="$SWAPFILE" bs=1M count=256 2>/dev/null
+			mkswap "$SWAPFILE" >/dev/null 2>&1
+		fi
+		swapon "$SWAPFILE" 2>/dev/null
+		modprobe nouveau 2>/dev/null
+		sleep 5
+		if [ -e /dev/dri/card0 ]; then
+			start_x
+		else
+			echo "S50desktop: no /dev/dri/card0, console only"
+		fi
+		;;
+	stop)
+		killall Xorg openbox lxpanel pcmanfm xterm 2>/dev/null
+		;;
+esac
