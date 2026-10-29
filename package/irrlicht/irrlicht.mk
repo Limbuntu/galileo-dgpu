@@ -66,6 +66,7 @@ endef
 # Normalize the Makefile so patches apply cleanly on all platforms.
 define IRRICHT_FIX_LINE_ENDINGS
 	$(SED) 's/\r$$//' $(@D)/source/Irrlicht/Makefile
+	$(SED) 's/\r$$//' $(@D)/source/Irrlicht/COSOperator.cpp
 endef
 IRRLICHT_POST_EXTRACT_HOOKS += IRRICHT_FIX_LINE_ENDINGS
 

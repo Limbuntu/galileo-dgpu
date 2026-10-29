@@ -18,6 +18,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup 2>/dev/null || true
+          sudo docker system prune -f 2>/dev/null || true
+          df -h /
+
       - name: Build builder image
         run: docker build -t galileo-builder .
 
