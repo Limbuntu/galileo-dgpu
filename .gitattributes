@@ -1,0 +1,3 @@
+*.patch -text
+*.diff -text
+board/intel/galileo/rootfs_overlay*/** -text
