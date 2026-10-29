@@ -2,8 +2,6 @@
 # Used by CI (.gitea/workflows/build.yml) and local builds
 FROM debian:bookworm
 
-RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources || \
-    sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential gcc g++ make bc bison flex \
