@@ -6,8 +6,8 @@
 
 LIBEPOXY_VERSION_MAJOR = 1.5
 LIBEPOXY_VERSION = $(LIBEPOXY_VERSION_MAJOR).5
-LIBEPOXY_SITE = http://ftp.gnome.org/pub/gnome/sources/libepoxy/$(LIBEPOXY_VERSION_MAJOR)
-LIBEPOXY_SOURCE = libepoxy-$(LIBEPOXY_VERSION).tar.gz
+LIBEPOXY_SITE = https://deb.debian.org/debian/pool/main/libe/libepoxy
+LIBEPOXY_SOURCE = libepoxy_$(LIBEPOXY_VERSION).orig.tar.gz
 LIBEPOXY_INSTALL_STAGING = YES
 LIBEPOXY_DEPENDENCIES = host-pkgconf xutil_util-macros
 LIBEPOXY_LICENSE = MIT
