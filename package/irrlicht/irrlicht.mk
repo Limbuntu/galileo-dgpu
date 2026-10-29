@@ -63,3 +63,10 @@ define IRRLICHT_INSTALL_TARGET_CMDS
 endef
 
 $(eval $(generic-package))
+
+# Upstream zip contains CRLF line endings (Windows packaging).
+# Normalize the Makefile so patches apply cleanly on all platforms.
+define IRRICHT_FIX_LINE_ENDINGS
+	$(SED) 's/\r$$//' $(@D)/source/Irrlicht/Makefile
+endef
+IRRLICHT_POST_EXTRACT_HOOKS += IRRICHT_FIX_LINE_ENDINGS
