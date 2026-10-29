@@ -1,0 +1,35 @@
+From 8b1c4a2f5d3e6a7b8c9d0e1f2a3b4c5d6e7f8091 Mon Sep 17 00:00:00 2001
+From: Limbuntu <limbuntu@users.noreply.github.com>
+Date: Thu, 30 Oct 2026 00:00:00 +0800
+Subject: [PATCH] quote BUILD_CC when passing CC to sub-make
+
+BUILD_CC contains spaces when Buildroot prepends ccache (BR2_CCACHE=y),
+e.g. "ccache /usr/bin/gcc". Unquoted, make splits the value at the space:
+CC becomes just "ccache" and the compiler path is parsed as a make goal.
+nsgenbind then fails with:
+
+  Makefile.tools:413: *** Unable to detect toolchain.  Stop.
+
+Quote the value so the sub-make receives the full compiler command.
+
+Signed-off-by: Limbuntu <limbuntu@users.noreply.github.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 5698c87..a1b2c3d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -110,7 +110,7 @@ endef
+ 
+ # prefixed install macro for each host sub target
+ define do_build_prefix_install
+-	$(MAKE) install --directory=$1 HOST=$(BUILD) CC=$(BUILD_CC) PREFIX=$(TMP_PREFIX) Q=$(Q) DESTDIR=
++	$(MAKE) install --directory=$1 HOST=$(BUILD) CC="$(BUILD_CC)" PREFIX=$(TMP_PREFIX) Q=$(Q) DESTDIR=
+ 
+ endef
+ 
+-- 
+2.39.2
+
