@@ -1,7 +1,8 @@
 #!/bin/sh
 # S50desktop (universal GPU): auto-detect amdgpu/radeon/nouveau, then X + LXDE
 SWAPFILE=/swapfile
-MODDIR=/lib/modules/5.10.29/kernel/drivers/gpu/drm
+KVER=$(uname -r)
+MODDIR=/lib/modules/$KVER/kernel/drivers/gpu/drm
 
 load_gpu() {
     # Load TTM first (required by amdgpu and nouveau)

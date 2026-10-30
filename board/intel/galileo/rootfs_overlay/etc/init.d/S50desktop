@@ -1,65 +1,66 @@
 #!/bin/sh
-# S50desktop: GPU drivers + X desktop on the Galileo.
-#
-# Xorg is started DIRECTLY (not via xinit): xinit's client/session handling
-# proved fragile here, and buildroot's own S40xorg (removed in post-build)
-# used to grab display 0 on vt01 and fight the respawning tty1 getty,
-# cycling the display signal. We run on vt7 to stay clear of the getty.
-#
-# Proven working: Galileo Gen 2 + HD 6450 (Caicos, radeon) at 1280x1024.
-
+# S50desktop (universal GPU): auto-detect amdgpu/radeon/nouveau, then X + LXDE
 SWAPFILE=/swapfile
+KVER=$(uname -r)
+MODDIR=/lib/modules/$KVER/kernel/drivers/gpu/drm
+
+load_gpu() {
+    # Load TTM first (required by amdgpu and nouveau)
+    [ -f "$MODDIR/ttm/ttm.ko" ] && insmod "$MODDIR/ttm/ttm.ko" 2>/dev/null
+    # Try amdgpu (RX 470/480/570/580/590)
+    [ -f "$MODDIR/amd/amdgpu/amdgpu.ko" ] && insmod "$MODDIR/amd/amdgpu/amdgpu.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: amdgpu loaded"; return 0; fi
+    # Try radeon (HD 2000-7000)
+    [ -f "$MODDIR/radeon/radeon.ko" ] && insmod "$MODDIR/radeon/radeon.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: radeon loaded"; return 0; fi
+    # Try nouveau (NVIDIA)
+    [ -f "$MODDIR/nouveau/nouveau.ko" ] && insmod "$MODDIR/nouveau/nouveau.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: nouveau loaded"; return 0; fi
+    echo "S50desktop: no GPU driver loaded"
+    return 1
+}
 
 start_x() {
 	rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
-	/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf \
-		>/var/log/X.log 2>&1 &
+	/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
 	sleep 8
+	n=0
+	while [ $n -lt 15 ] && ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; do
+		sleep 2
+		n=$((n+1))
+	done
 	if ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; then
-		echo "S50desktop: Xorg failed to start, see /var/log/X.log"
+		echo "S50desktop: Xorg failed to start"
 		return 1
 	fi
-	# retry session until X is actually accepting connections (cold boot is slow)
 	(
 		n=0
 		while [ $n -lt 15 ]; do
-			DISPLAY=:0 /usr/bin/openbox >/var/log/openbox.log 2>&1
+			DISPLAY=:0 /usr/bin/lxde-session >/var/log/lxde-session.log 2>&1
 			sleep 2
-			DISPLAY=:0 xterm -geometry 100x30+8+8 -title console \
-				>/var/log/xterm.log 2>&1
-			sleep 1
 			ps | grep -v grep | grep openbox >/dev/null 2>&1 && break
 			n=$((n+1))
 		done
 	) &
-	echo "S50desktop: desktop up on /dev/dri/card0"
+	echo "S50desktop: desktop up"
 }
 
 case "$1" in
 	start)
-		# First boot: create a 256 MB swapfile on the SD card.
 		if [ ! -f "$SWAPFILE" ]; then
-			echo "S50desktop: creating $SWAPFILE (256M)..."
 			dd if=/dev/zero of="$SWAPFILE" bs=1M count=256 2>/dev/null
 			mkswap "$SWAPFILE" >/dev/null 2>&1
 		fi
 		swapon "$SWAPFILE" 2>/dev/null
-		# radeon binds HD 6450 (Caicos), amdgpu binds RX 580 (Polaris).
-		modprobe amdgpu 2>/dev/null
-		modprobe radeon 2>/dev/null
-		sleep 3
+		load_gpu
+		sleep 5
 		if [ -e /dev/dri/card0 ]; then
 			start_x
 		else
-			echo "S50desktop: WARNING: /dev/dri/card0 missing, console only."
+			echo "S50desktop: no /dev/dri/card0, console only"
 		fi
 		;;
 	stop)
-		killall Xorg openbox xterm 2>/dev/null
+		killall Xorg openbox lxpanel pcmanfm xterm 2>/dev/null
 		;;
-	restart|reload)
-		;;
-	*)
-		echo "Usage: $0 {start|stop|restart}"
-		exit 1
 esac
