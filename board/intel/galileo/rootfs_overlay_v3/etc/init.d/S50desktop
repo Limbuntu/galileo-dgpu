@@ -1,16 +1,38 @@
 #!/bin/sh
-# S50desktop (V3 full): X + lxde-session (openbox + lxpanel + pcmanfm + xterm)
+# S50desktop (universal GPU): auto-detect amdgpu/radeon/nouveau, then X + LXDE
 SWAPFILE=/swapfile
+KVER=$(uname -r)
+MODDIR=/lib/modules/$KVER/kernel/drivers/gpu/drm
+
+load_gpu() {
+    # Load TTM first (required by amdgpu and nouveau)
+    [ -f "$MODDIR/ttm/ttm.ko" ] && insmod "$MODDIR/ttm/ttm.ko" 2>/dev/null
+    # Try amdgpu (RX 470/480/570/580/590)
+    [ -f "$MODDIR/amd/amdgpu/amdgpu.ko" ] && insmod "$MODDIR/amd/amdgpu/amdgpu.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: amdgpu loaded"; return 0; fi
+    # Try radeon (HD 2000-7000)
+    [ -f "$MODDIR/radeon/radeon.ko" ] && insmod "$MODDIR/radeon/radeon.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: radeon loaded"; return 0; fi
+    # Try nouveau (NVIDIA)
+    [ -f "$MODDIR/nouveau/nouveau.ko" ] && insmod "$MODDIR/nouveau/nouveau.ko" 2>/dev/null
+    if [ -e /dev/dri/card0 ]; then echo "S50desktop: nouveau loaded"; return 0; fi
+    echo "S50desktop: no GPU driver loaded"
+    return 1
+}
 
 start_x() {
 	rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
 	/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
 	sleep 8
+	n=0
+	while [ $n -lt 15 ] && ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; do
+		sleep 2
+		n=$((n+1))
+	done
 	if ! ps | grep -v grep | grep Xorg >/dev/null 2>&1; then
-		echo "S50desktop: Xorg failed to start, see /var/log/X.log"
+		echo "S50desktop: Xorg failed to start"
 		return 1
 	fi
-	# retry session until X is actually accepting connections (cold boot is slow)
 	(
 		n=0
 		while [ $n -lt 15 ]; do
@@ -20,7 +42,7 @@ start_x() {
 			n=$((n+1))
 		done
 	) &
-	echo "S50desktop: full desktop up on /dev/dri/card0"
+	echo "S50desktop: desktop up"
 }
 
 case "$1" in
@@ -30,9 +52,8 @@ case "$1" in
 			mkswap "$SWAPFILE" >/dev/null 2>&1
 		fi
 		swapon "$SWAPFILE" 2>/dev/null
-		modprobe amdgpu 2>/dev/null
-		modprobe radeon 2>/dev/null
-		sleep 3
+		load_gpu
+		sleep 5
 		if [ -e /dev/dri/card0 ]; then
 			start_x
 		else
