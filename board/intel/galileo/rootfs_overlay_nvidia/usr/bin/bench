@@ -1,0 +1,7 @@
+#!/bin/sh
+# 一键跑分: PI 1M + 7-Zip
+echo "=== SuperPI 1M ==="
+/usr/bin/pi_css5 1048576
+echo ""
+echo "=== 7-Zip Benchmark ==="
+/usr/bin/7zr b
