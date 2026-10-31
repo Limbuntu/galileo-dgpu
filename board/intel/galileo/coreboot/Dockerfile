@@ -11,7 +11,7 @@ FROM debian:12
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN sed -i -e 's|deb.debian.org|mirrors.aliyun.com|g' \
+RUN sed -i -e 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
            /etc/apt/sources.list.d/debian.sources \
     && apt-get -o Acquire::Retries=5 update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \

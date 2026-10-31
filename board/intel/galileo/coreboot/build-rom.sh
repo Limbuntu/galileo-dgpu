@@ -15,7 +15,8 @@ printf '%s\n' \
 	CONFIG_VENDOR_INTEL=y \
 	CONFIG_BOARD_INTEL_GALILEO=y \
 	CONFIG_GALILEO_GEN2=y \
-	CONFIG_PAYLOAD_SEABIOS=y > .config
+	CONFIG_PAYLOAD_SEABIOS=y \
+	CONFIG_ANY_TOOLCHAIN=y > .config
 make olddefconfig
 
 echo "=== selected config ==="
