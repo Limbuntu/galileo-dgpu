@@ -4,35 +4,75 @@
 
 Reviving an Intel Galileo Gen 2 (Quark X1000, 400 MHz i586, 256 MB RAM, no SSE2/PAE/CMOV)
 as a fully usable Linux computer: LXDE desktop, GPU acceleration, browser, and games —
-with a discrete AMD GPU driving the display.
+with any one of three discrete GPUs driving the display.
 
 ## Image Lineup
 
-| Image | libc | Contents |
-|---|---|---|
-| `galileo_terminal` | uClibc | X + xterm, ShadowFB software 2D |
-| `galileo_browser` | glibc | Full LXDE desktop + NetSurf, nothing else |
-| `galileo_workstation` | glibc | Everything: LXDE + GPU accel + Doom/OpenTTD/Minetest/Minecraft + radeonsi |
+Two images are built and shipped (CI matrix: `workstation`, `dosbox`).
 
-## System Stack (workstation)
+| Image | Contents | Rootfs |
+|---|---|---|
+| `galileo_workstation` | Full Linux: LXDE + GPU accel + NetSurf + Doom/OpenTTD/Minetest/Minecraft + radeonsi | 2400M |
+| `galileo_dosbox` | DOS console: X + DOSBox 0.74-3 + 8 playable DOS games, one-click desktop icons | 3600M |
+
+`galileo_terminal` / `galileo_browser` / `galileo_nvidia` defconfigs are kept in `configs/`
+for reference but are no longer built.
+
+## DOS image (`galileo_dosbox`)
+
+Boots straight into LXDE with a desktop icon per game; every icon runs
+`dosgame <key>`, which mounts the game directory and starts DOSBox fullscreen.
+
+| key | Game | Notes |
+|---|---|---|
+| `pal95` | 仙剑奇侠传 95 | runs `PAL.EXE` |
+| `civ1` | 文明 1 | boots from two floppy images |
+| `nfs` | 极品飞车 SE | `NFSSE/NFS.EXE` |
+| `sc2000` | 模拟城市 2000 | `C_SC2000/SC2000.EXE` |
+| `sgz5` | 三国志 V PK | mounts `san5.cue` (data ISO + 20 MP3 CDDA tracks) as D: |
+| `doom` | Doom (Freedoom) | `DOOM.BAT` |
+| `ra1` | 红色警戒 1 | DOS v1.04: `RA.EXE` + `GAME.DAT` + `MAIN.MIX`/`REDALERT.MIX` |
+| `war2` | 魔兽争霸 II：黑潮 | DOS v1.50: `WAR2.EXE` + CD-side `DATA/` |
+
+Two games insist on seeing their disc, so their directory is mounted twice —
+`C:` as the game drive and `D:` as a CD-ROM with an explicit volume label:
+
+```
+dosbox -conf ~/.dosbox/dosbox-0.74.conf \
+       -c "mount c /usr/share/dosgames/RA1" \
+       -c "mount d /usr/share/dosgames/RA1 -t cdrom -label CD1" \
+       -c "c:" -c "RA.EXE"
+```
+
+Red Alert's runtime config lives in `RA1/REDALERT.INI` (`[Sound] Card=13` = SB16,
+`Port=220h/IRQ=7/DMA=1`). Warcraft II uses `WAR2.INI` (`cdpath=d:\`, `cdaudio=0`)
+plus the Miles driver maps under `WAR2/DRIVERS/`. Game data is 880 MB in total,
+hence the 3600M ext2/partition size.
+
+## System Stack
 
 | Layer | Component |
 |---|---|
-| Kernel | Linux 5.10.29 (i586, radeon + amdgpu modules) |
-| Base | Buildroot 2020.11.2, bash, dropbear SSH, DHCP |
+| Kernel | Linux 5.10.29 (i586, `amdgpu` + `radeon` + `nouveau` as modules, TTM built in) |
+| Base | Buildroot 2020.11.2, glibc, bash, dropbear SSH, DHCP |
 | Display | Xorg 1.20 + modesetting + glamor (EGL/GBM) → GPU-accelerated 2D |
+| GPU auto-detect | `S50desktop` insmods ttm → amdgpu → radeon → nouveau, X starts on `/dev/dri/card0` |
+| Mesa | swrast + r600 (HD 6450) + radeonsi/LLVM (RX 580) + nouveau |
+| Firmware | `amdgpu/polaris10*` (trimmed), whole `radeon/` (Caicos etc.), `nvidia/` |
 | Desktop | openbox + lxpanel + pcmanfm (double-click launchers, XDG menu) |
-| Browser | NetSurf 3.10 (GTK2, HTTPS) |
-| Games | Doom (freedoom), OpenTTD (OpenGFX), Minetest, Minecraft 1.5.2 (OpenJDK 14) |
-| GPU drivers | r600g (HD 6450) + radeonsi/LLVM (RX 580 ready, untested) |
+| Browser | NetSurf 3.10 (GTK2, HTTPS) — workstation image only |
+| Sound | ALSA + DOSBox SB16 (base 220h, IRQ 7, DMA 1, HDMA 5) + ALSA MIDI |
 | Utilities | links2, lspci, neofetch, wqy CJK fonts, HTTP time sync |
 
 ## Key Files
 
-- `configs/galileo_{terminal,browser,workstation}_defconfig` — buildroot package selection
+- `configs/galileo_{workstation,dosbox}_defconfig` — buildroot package selection
 - `board/intel/galileo/linux-rx580.config` — kernel config (non-DC radeon path; Quark has no SSE2)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf, init scripts, golden files
-- `board/intel/galileo/post-build.sh` — gconv install (iconv), cleanup
+- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — per-game mount + launch table
+- `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox defaults
+- `board/intel/galileo/post-build.sh` — gconv install (iconv), amdgpu firmware trim
+- `package/dosbox/` — DOSBox 0.74-3 (SDL detection fix, libglu dep)
 - `package/netsurf/` — browser patches
 - `package/openjdk-bin/`, `package/openjdk/` — aarch64 host + X11 AWT patches
 - `package/llvm/` — benchmark disabled (host build fix)
@@ -44,6 +84,15 @@ with a discrete AMD GPU driving the display.
 ```
 
 Output: `sdcard.img` in the docker volume `gres-out`. Flash with `dd`.
+
+Single image, locally:
+
+```sh
+docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
+  -e FORCE_UNSAFE_CONFIGURE=1 gres-builder sh -c '
+    make O=/out/dosbox BR2_DL_DIR=/out/dl galileo_dosbox_defconfig &&
+    make O=/out/dosbox BR2_DL_DIR=/out/dl -j$(nproc)'
+```
 
 ## Board Quick Reference
 
@@ -62,3 +111,9 @@ Output: `sdcard.img` in the docker volume `gres-out`. Flash with `dd`.
 - glibc images need gconv modules or iconv/g_convert break (openbox "Unnamed Window" titles)
 - XDG menus need `<DefaultAppDirs/>` in the XML and `lxde-applications.menu` naming
 - MIT-SHM requires `image->data = shmaddr` after `shmat`
+- DOS games may demand a CD-ROM: a plain `C:` mount is not enough, the same directory
+  must also be mounted `-t cdrom` with `-label` (DOSBox 0.74-3 supports both)
+- Red Alert DOS validates `REDALERT.INI` `[Sound] Card=`: an out-of-table value aborts with
+  `Cannot initialize detection system (15)`
+- Warcraft II DOS reads `MUDDAT.CUD`/`SNDDAT.WAR` from the disc, not from the install dir —
+  ship them inside `DATA/` and keep `cdpath=d:\` in `WAR2.INI`
