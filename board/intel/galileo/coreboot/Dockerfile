@@ -8,7 +8,12 @@ FROM debian:11
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Domestic mirror: the CI runner sits in China and deb.debian.org is slow there.
+RUN sed -i -e 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+           -e 's|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+           /etc/apt/sources.list \
+    && apt-get -o Acquire::Retries=5 update \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
         git build-essential gcc-multilib libc6-dev-i386 \
         python3 nasm iasl libssl-dev pkg-config zlib1g-dev \
         m4 bison flex bc libelf-dev curl ca-certificates \
