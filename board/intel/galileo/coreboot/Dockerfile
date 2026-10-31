@@ -26,6 +26,9 @@ WORKDIR /src
 # fetched by coreboot's payload Makefile from review.coreboot.org (reachable).
 RUN git clone --depth 1 --branch 4.7 https://gitee.com/mirrors/coreboot.git coreboot || \
     git clone --depth 1 --branch 4.7 https://review.coreboot.org/coreboot.git coreboot
+# Drop git metadata: coreboot's build would otherwise run `git submodule update`
+# for vboot/chromeec/cbootimage, and the mirror does not carry those submodules.
+RUN rm -rf coreboot/.git
 
 COPY build-rom.sh /usr/local/bin/build-rom.sh
 RUN chmod +x /usr/local/bin/build-rom.sh && /usr/local/bin/build-rom.sh
