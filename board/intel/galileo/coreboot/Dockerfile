@@ -15,7 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 --branch 4.7 https://github.com/coreboot/coreboot.git
+# github.com is unreachable from the CI runner (dial tcp: i/o timeout).
+# Use the Gitee mirror first; coreboot's own Gerrit as fallback. SeaBIOS is
+# fetched by coreboot's payload Makefile from review.coreboot.org (reachable).
+RUN git clone --depth 1 --branch 4.7 https://gitee.com/mirrors/coreboot.git coreboot || \
+    git clone --depth 1 --branch 4.7 https://review.coreboot.org/coreboot.git coreboot
 
 COPY build-rom.sh /usr/local/bin/build-rom.sh
 RUN chmod +x /usr/local/bin/build-rom.sh && /usr/local/bin/build-rom.sh
