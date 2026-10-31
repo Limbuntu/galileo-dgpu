@@ -1,13 +1,13 @@
-# Builds an 8 MB coreboot ROM for the Intel Galileo Gen 2 with a SeaBIOS payload.
+# Toolchain image for building the Galileo Gen 2 coreboot ROM.
 #
-# Why: the board ships UEFI-only firmware (no CSM), and DOS needs real-mode BIOS
-# services, so the only way to run FreeDOS/MS-DOS natively is a BIOS implementation
-# on the SPI flash. coreboot 4.4-4.7 are the releases that still carry
+# Why coreboot at all: the board ships UEFI-only firmware with no CSM, and DOS
+# needs real-mode BIOS services, so running FreeDOS/MS-DOS natively means
+# replacing the firmware. coreboot 4.4-4.7 are the releases that still carry
 # src/soc/intel/quark + src/mainboard/intel/galileo.
 #
-# The tree is the official 4.7 release tarball, not a git checkout: coreboot's
-# cbfstool needs 3rdparty/vboot headers, and github.com is unreachable from the
-# CI runner (its gitee mirror does not carry the submodules).
+# This image only provides the toolchain; build-rom.sh extracts the coreboot
+# 4.7 release tarball (provisioned on the CI host at /opt/git-assets, or fetched
+# from coreboot.org as fallback) and produces /out/coreboot.rom.
 FROM debian:12
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,9 +17,9 @@ RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
            /etc/apt/sources.list.d/debian.sources \
     && apt-get -o Acquire::Retries=5 update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-        git build-essential gcc-multilib libc6-dev-i386 \
+        build-essential gcc-multilib libc6-dev-i386 \
         python3 nasm iasl libssl-dev pkg-config zlib1g-dev \
-        m4 bison flex bc libelf-dev curl ca-certificates \
+        m4 bison flex bc libelf-dev curl ca-certificates xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # coreboot 4.7 is incompatible with GNU make >= 4.3: its Makefile.inc defines a
@@ -36,8 +36,7 @@ RUN curl -sSL https://mirrors.tuna.tsinghua.edu.cn/gnu/make/make-4.2.1.tar.gz -o
     && /opt/make42/bin/make --version | head -1
 ENV PATH=/opt/make42/bin:$PATH
 
-WORKDIR /src
-ADD coreboot-4.7.tar.xz /src/
-
 COPY build-rom.sh /usr/local/bin/build-rom.sh
-RUN chmod +x /usr/local/bin/build-rom.sh && /usr/local/bin/build-rom.sh
+RUN chmod +x /usr/local/bin/build-rom.sh
+
+CMD ["/usr/local/bin/build-rom.sh"]
