@@ -1,16 +1,13 @@
 #!/bin/sh
-# Builds coreboot 4.7 for the Intel Galileo Gen 2 with a SeaBIOS payload.
-# Output: /out/coreboot.rom (8 MB)
+# Builds coreboot 4.7 (Galileo Gen 2, SeaBIOS payload) from the official release
+# tarball and drops the 8 MB flash image in /out/coreboot.rom.
 set -e
 
-cd /src/coreboot
+cd /src/coreboot-4.7
 
-# coreboot 4.7 declares a variable whose name is a single space; GNU make >= 4.3
-# rejects that ("empty variable name"). coreboot 4.8+ dropped the construct, so
-# remove those two lines to build this tag with a modern make.
-sed -i -e '/^\$(spc) :=$/d' -e '/^\$(spc) +=$/d' Makefile.inc
-
-# Quark X1000 boots through a legacy BIOS only because SeaBIOS is the payload.
+# Real-mode BIOS on the Quark: SeaBIOS is the payload, and the board's single
+# core rules out anything that needs a spare CPU. gcc from the distro is fine
+# for building the ROM itself.
 printf '%s\n' \
 	CONFIG_VENDOR_INTEL=y \
 	CONFIG_BOARD_INTEL_GALILEO=y \
@@ -22,7 +19,7 @@ make olddefconfig
 echo "=== selected config ==="
 grep -E '^CONFIG_(BOARD_INTEL_GALILEO|GALILEO_GEN2|PAYLOAD_SEABIOS|ROM_SIZE|CBFS_SIZE|SEABIOS_STABLE)=' .config
 
-echo "=== build ==="
+echo "=== build ($(make --version | head -1)) ==="
 make -j"$(nproc)"
 
 test -s build/coreboot.rom
@@ -31,4 +28,4 @@ cp build/coreboot.rom /out/coreboot.rom
 
 echo "=== result ==="
 ls -l /out/coreboot.rom
-md5sum /out/coreboot.rom 2>/dev/null || md5 -r /out/coreboot.rom
+md5sum /out/coreboot.rom
