@@ -17,7 +17,7 @@ RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
            /etc/apt/sources.list.d/debian.sources \
     && apt-get -o Acquire::Retries=5 update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-        build-essential gcc-multilib libc6-dev-i386 \
+        git build-essential gcc-multilib libc6-dev-i386 \
         python3 nasm iasl libssl-dev pkg-config zlib1g-dev \
         m4 bison flex bc libelf-dev curl ca-certificates xz-utils \
     && rm -rf /var/lib/apt/lists/*
