@@ -26,7 +26,8 @@ sed -i 's|^CFLAGS_common += -Werror$|CFLAGS_common += -Werror -Wno-error|' Makef
 
 # gcc 10+ defaults to -fno-common; coreboot 4.7's sconfig relies on common
 # symbols ("multiple definition of `head`"). Compile the old way.
-sed -i 's|^CFLAGS_common += -Werror -Wno-error$|CFLAGS_common += -Werror -Wno-error -fcommon\nHOSTCFLAGS_common += -fcommon|' Makefile.inc
+sed -i 's|^CFLAGS_common += -Werror -Wno-error$|CFLAGS_common += -Werror -Wno-error|' Makefile.inc
+sed -i 's|^SCONFIGFLAGS += |SCONFIGFLAGS += -fcommon |' util/sconfig/Makefile.inc
 
 # gcc 12 flags a false positive in the Quark storage test (its struct pointer is
 # used before storage_media is swapped in) and the ROM build treats it as an error.
@@ -44,6 +45,8 @@ printf '%s\n' \
 	CONFIG_BOARD_INTEL_GALILEO=y \
 	CONFIG_GALILEO_GEN2=y \
 	CONFIG_PAYLOAD_SEABIOS=y \
+	CONFIG_SEABIOS_REVISION=y \
+	CONFIG_SEABIOS_REVISION_ID=rel-1.16.3 \
 	CONFIG_ANY_TOOLCHAIN=y > .config
 make olddefconfig
 
