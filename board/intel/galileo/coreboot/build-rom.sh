@@ -29,6 +29,10 @@ sed -i 's|^CFLAGS_common += -Werror$|CFLAGS_common += -Werror -Wno-error|' Makef
 sed -i 's|^CFLAGS_common += -Werror -Wno-error$|CFLAGS_common += -Werror -Wno-error|' Makefile.inc
 sed -i 's|^SCONFIGFLAGS += |SCONFIGFLAGS += -fcommon |' util/sconfig/Makefile.inc
 
+# LDFLAGS_common carries gcc-driver flags straight to ld; binutils >= 2.39
+# rejects the short form with "unable to disambiguate: -nostartfiles".
+sed -i 's| -nostartfiles||' Makefile.inc
+
 # gcc 12 flags a false positive in the Quark storage test (its struct pointer is
 # used before storage_media is swapped in) and the ROM build treats it as an error.
 sed -i '1i #pragma GCC diagnostic ignored "-Warray-bounds"' src/soc/intel/quark/storage_test.c
