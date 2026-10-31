@@ -4,14 +4,15 @@
 # services, so the only way to run FreeDOS/MS-DOS natively is a BIOS implementation
 # on the SPI flash. coreboot 4.4-4.7 are the releases that still carry
 # src/soc/intel/quark + src/mainboard/intel/galileo.
-FROM debian:11
+#
+# Debian 11 is archived (its image points at snapshot.debian.org, which is very
+# slow from here), so build on bookworm with a domestic mirror instead.
+FROM debian:12
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Domestic mirror: the CI runner sits in China and deb.debian.org is slow there.
-RUN sed -i -e 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
-           -e 's|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
-           /etc/apt/sources.list \
+RUN sed -i -e 's|deb.debian.org|mirrors.aliyun.com|g' \
+           /etc/apt/sources.list.d/debian.sources \
     && apt-get -o Acquire::Retries=5 update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
         git build-essential gcc-multilib libc6-dev-i386 \
