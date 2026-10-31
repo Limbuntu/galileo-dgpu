@@ -20,6 +20,10 @@ mkdir -p "$work"
 tar xf "$TARBALL" -C "$work"
 cd "$work/coreboot-4.7"
 
+# coreboot 4.7 appends -Werror unconditionally; gcc 12 turned several harmless
+# diagnostics into build failures. Keep the warnings, drop the hard failure.
+sed -i 's|^CFLAGS_common += -Werror$|CFLAGS_common += -Werror -Wno-error|' Makefile.inc
+
 # gcc 12 flags a false positive in the Quark storage test (its struct pointer is
 # used before storage_media is swapped in) and the ROM build treats it as an error.
 sed -i '1i #pragma GCC diagnostic ignored "-Warray-bounds"' src/soc/intel/quark/storage_test.c
