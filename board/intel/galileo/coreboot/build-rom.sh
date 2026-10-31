@@ -20,6 +20,17 @@ mkdir -p "$work"
 tar xf "$TARBALL" -C "$work"
 cd "$work/coreboot-4.7"
 
+# gcc 12 flags a false positive in the Quark storage test (its struct pointer is
+# used before storage_media is swapped in) and the ROM build treats it as an error.
+sed -i '1i #pragma GCC diagnostic ignored "-Warray-bounds"' src/soc/intel/quark/storage_test.c
+
+# Galileo's console is HSUART1 at 0xa0019000, but coreboot only defines
+# CONFIG_CONSOLE_UART_BASE_ADDRESS for Apollolake/Denverton/AMD, so the SeaBIOS
+# payload rule would write an empty DEBUG_SERIAL_MEM_ADDRESS and SeaBIOS kconfig
+# rejects it.
+sed -i 's|CONFIG_DEBUG_SERIAL_MEM_ADDRESS=$(CONFIG_CONSOLE_UART_BASE_ADDRESS)|CONFIG_DEBUG_SERIAL_MEM_ADDRESS=0xa0019000|g' \
+	payloads/external/SeaBIOS/Makefile
+
 printf '%s\n' \
 	CONFIG_VENDOR_INTEL=y \
 	CONFIG_BOARD_INTEL_GALILEO=y \
