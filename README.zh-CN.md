@@ -68,6 +68,7 @@ dosbox -conf ~/.dosbox/dosbox-0.74.conf \
 - `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — 每个游戏的挂载 + 启动表
 - `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox 默认配置
 - `board/intel/galileo/post-build.sh` — gconv 安装(iconv)、amdgpu 固件裁剪
+- `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip 跑分结果与完整测试流程
 - `package/dosbox/` — DOSBox 0.74-3(SDL 探测修复、libglu 依赖)
 
 ## 构建

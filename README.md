@@ -72,6 +72,7 @@ hence the 3600M ext2/partition size.
 - `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — per-game mount + launch table
 - `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox defaults
 - `board/intel/galileo/post-build.sh` — gconv install (iconv), amdgpu firmware trim
+- `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip numbers and the full benchmark procedure
 - `package/dosbox/` — DOSBox 0.74-3 (SDL detection fix, libglu dep)
 - `package/netsurf/` — browser patches
 - `package/openjdk-bin/`, `package/openjdk/` — aarch64 host + X11 AWT patches
