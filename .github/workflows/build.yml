@@ -11,7 +11,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [desktop, workstation, dosbox]
+        # workstation is NOT built here: a cold build (no dl/ccache cache) needs
+        # 5-6h on a 2-vCPU runner and hits GitHub's 6h job ceiling. It is built
+        # by the self-hosted Gitea runner, which keeps a persistent build cache.
+        image: [desktop, dosbox]
     runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
