@@ -1,9 +1,8 @@
 name: Build images
 
+# Builds moved to the self-hosted Gitea runner (.gitea/workflows/build.yml).
+# This workflow is kept for a manual run only.
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 jobs:
