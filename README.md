@@ -8,20 +8,32 @@ with any one of three discrete GPUs driving the display.
 
 ## Image Lineup
 
-Two images are built and shipped (CI matrix: `workstation`, `dosbox`).
+Three images. One defconfig, one overlay layer, standard names.
 
-| Image | Contents | Rootfs |
-|---|---|---|
-| `galileo_workstation` | Full Linux: LXDE + GPU accel + NetSurf + Doom/OpenTTD/Minetest/Minecraft + radeonsi | 2400M |
-| `galileo_dosbox` | DOS console: X + DOSBox 0.74-3 + 8 playable DOS games, one-click desktop icons | 3600M |
+| defconfig | Image | Contents | Rootfs |
+|---|---|---|---|
+| `galileo_desktop` | desktop | X + openbox + xterm + pcmanfm, software 2D only | 800M |
+| `galileo_workstation` | workstation | desktop + NetSurf + Minecraft/OpenTTD/Doom/OpenArena + glmark2/gtkperf/mesa-demos | 3000M |
+| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + 8 DOS games + console menu | 3600M |
 
-`galileo_terminal` / `galileo_browser` / `galileo_nvidia` defconfigs are kept in `configs/`
-for reference but are no longer built.
+Naming convention — do not invent new suffixes:
+
+| Layer | Path |
+|---|---|
+| common | `board/intel/galileo/rootfs_overlay_common` |
+| desktop | `board/intel/galileo/rootfs_overlay_desktop` (X session, shared by desktop + workstation) |
+| workstation | `board/intel/galileo/rootfs_overlay_workstation` (apps/bench extras on top of desktop) |
+| dosbox | `board/intel/galileo/rootfs_overlay_dosbox` (overrides the X session with the fbcon menu) |
+
+CI: the GitHub matrix builds `desktop`, `workstation`, `dosbox`; the Gitea
+private build builds `workstation` only (same image plus the Bing welcome page).
 
 ## DOS image (`galileo_dosbox`)
 
-Boots straight into LXDE with a desktop icon per game; every icon runs
-`dosgame <key>`, which mounts the game directory and starts DOSBox fullscreen.
+Boots into a framebuffer-console menu on tty1; picking a number runs
+`dosgame <key>`, which mounts the game directory and starts DOSBox fullscreen
+through SDL's fbcon driver. There is no X, no window manager and no getty on
+tty1: `q` drops to a shell and `exit` brings the menu back.
 
 | key | Game | Notes |
 |---|---|---|
@@ -94,6 +106,16 @@ docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
     make O=/out/dosbox BR2_DL_DIR=/out/dl galileo_dosbox_defconfig &&
     make O=/out/dosbox BR2_DL_DIR=/out/dl -j$(nproc)'
 ```
+
+## BIOS bring-up (experimental)
+
+The stock firmware is UEFI-only (no CSM), so DOS-family systems cannot boot on
+it. `board/intel/galileo/coreboot/` contains a coreboot 4.20.1 + SeaBIOS build
+that provides real-mode BIOS services; it bundles the Quark FSP-M/FSP-S and RMU
+blobs that the earlier 4.7 attempt lacked. The ROM build is verified (CBFS
+contains `fspm.bin`, `fsps.bin`, `rmu.bin` at `0xfff00000`, and the SeaBIOS
+payload); the SPI write and boot still need hardware validation. See
+`board/intel/galileo/coreboot/README.md`.
 
 ## Board Quick Reference
 

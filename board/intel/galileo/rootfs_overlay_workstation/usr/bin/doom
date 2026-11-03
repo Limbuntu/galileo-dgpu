@@ -1,0 +1,3 @@
+#!/bin/sh
+cd /root/doom
+exec ./doomgeneric -iwad freedoom1.wad
