@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=OpenTTD
-Comment=Transport Tycoon
-Exec=openttd
-Icon=openttd
-Terminal=false
-Categories=Game;Simulation;

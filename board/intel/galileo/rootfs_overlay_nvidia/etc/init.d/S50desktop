@@ -20,6 +20,21 @@ load_gpu() {
     return 1
 }
 
+# 内核 LOGO(企鹅,只数与在线 CPU 数一致)由 fbcon 在绑定 framebuffer 时绘制。
+# DRM 驱动接管显示后 fbcon 会被重新绑定到新的 fb,旧画面(含企鹅)随之被清掉,
+# 屏幕上只剩一个光标横杠。重新 bind 一次会让 fbcon 重新 init 并把企鹅画回来。
+rebind_fbcon() {
+	for d in /sys/class/vtconsole/vtcon*; do
+		[ -r "$d/name" ] || continue
+		case "$(cat "$d/name" 2>/dev/null)" in
+		*frame*|*fb*)
+			echo 0 > "$d/bind" 2>/dev/null
+			echo 1 > "$d/bind" 2>/dev/null
+			;;
+		esac
+	done
+}
+
 start_x() {
 	rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
 	/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
@@ -53,6 +68,7 @@ case "$1" in
 		fi
 		swapon "$SWAPFILE" 2>/dev/null
 		load_gpu
+		rebind_fbcon
 		sleep 5
 		if [ -e /dev/dri/card0 ]; then
 			start_x
