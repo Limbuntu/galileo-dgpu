@@ -9,3 +9,9 @@ __pycache__/
 # 黄金文件里的运行时产物
 board/intel/galileo/rootfs_overlay_v3/root/doom/.savegame/
 images/
+
+# Game data is fetched, never committed (multi-GB, third-party media):
+#   tools/fetch-dosgames.sh stages it into the overlay before a build.
+board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames/
+!board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames/.gitkeep
+tmp/games/

@@ -5,6 +5,8 @@ config BR2_PACKAGE_DOSBOX
 	select BR2_PACKAGE_SDL
 	select BR2_PACKAGE_SDL_SOUND
 	select BR2_PACKAGE_ALSA_LIB
+	select BR2_PACKAGE_LIBPNG
+	select BR2_PACKAGE_ZLIB
 	help
 	  DOSBox emulates an x86 PC with sound and graphics, for
 	  running old DOS games.

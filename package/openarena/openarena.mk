@@ -11,6 +11,14 @@ OPENARENA_LICENSE = GPL-2.0+ (engine), CC-BY-SA-2.5 (assets)
 OPENARENA_LICENSE_FILES = readme_088.txt
 OPENARENA_DEPENDENCIES = sdl
 
+# This buildroot does not define an INFLATE rule for .zip, so the generic
+# extractor hands the archive to tar and dies with
+# "<file>.zip: Permission denied / This does not look like a tar archive".
+# Extract explicitly; the archive has no wrapping directory.
+define OPENARENA_EXTRACT_CMDS
+	unzip -q -o $(DL_DIR)/openarena/$(OPENARENA_SOURCE) -d $(@D)
+endef
+
 # The archive ships a prebuilt i386 Linux engine (openarena.i386) next to the
 # free asset paks of the 0.8.8 release plus a Windows build we do not need.
 define OPENARENA_INSTALL_TARGET_CMDS

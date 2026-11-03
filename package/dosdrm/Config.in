@@ -1,0 +1,12 @@
+config BR2_PACKAGE_DOSDRM
+	bool "dosdrm"
+	depends on BR2_PACKAGE_LIBDRM
+	help
+	  DRM/KMS diagnostic for the fbcon DOS appliance: probe (driver,
+	  atomic support, plane scaling limits), fit (pick the connector mode
+	  that matches the emulator frame), scale (GPU plane upscale prototype)
+	  and bench (framebuffer write cost).
+
+	  Used to verify on the real board whether hardware plane scaling is
+	  available; without it the image falls back to CRT mode == frame size
+	  so the monitor's scaler does the upscale.
