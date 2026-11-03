@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenArena 帧率测试
+Comment=自动录制/回放 timedemo，输出 fps
+Exec=xterm -e sh -c "q3bench; echo; echo '按回车关闭...'; read x"
+Icon=applications-games
+Terminal=false
+Categories=Game;Benchmark;

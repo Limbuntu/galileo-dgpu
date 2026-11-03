@@ -259,6 +259,7 @@ comment "Themes"
 endmenu
 
 menu "Games"
+	source "package/openarena/Config.in"
 	source "package/ascii-invaders/Config.in"
 	source "package/chocolate-doom/Config.in"
 	source "package/doom-wad/Config.in"

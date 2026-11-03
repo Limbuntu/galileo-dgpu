@@ -1,0 +1,27 @@
+#!/bin/sh
+# q3bench - fully automated Quake III (OpenArena) fps benchmark.
+#
+# Records a fixed bot demo on first use (no interaction needed), then replays
+# it with `timedemo 1` and prints the fps line. Run it from the desktop/xterm:
+#   q3bench [r_mode]         r_mode 3 = 640x480 (default), 4 = 800x600
+MODE="${1:-3}"
+DEMO=bench
+cd /opt/openarena || exit 1
+
+if [ ! -f "baseoa/demos/$DEMO.dm_68" ]; then
+	echo "q3bench: recording benchmark demo (one-off, ~10s)..."
+	mkdir -p baseoa/demos
+	./openarena +set s_initsound 0 +set bot_enable 1 +set sv_pure 0 \
+		+map oa_dm1 +addbot sarge 3 +record "$DEMO" +wait 900 +stoprecord +quit \
+		>/dev/null 2>&1
+fi
+
+if [ ! -f "baseoa/demos/$DEMO.dm_68" ]; then
+	echo "q3bench: demo recording failed; run openarena once and record manually" >&2
+	exit 1
+fi
+
+out=$(./openarena +set s_initsound 0 +set r_swapInterval 0 +set com_maxfps 0 \
+	+set r_mode "$MODE" +set timedemo 1 +demo "$DEMO" +quit 2>&1)
+
+echo "$out" | grep -iE '[0-9.]+ fps' | tail -1

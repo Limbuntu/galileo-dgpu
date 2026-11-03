@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=glmark2 (3D)
+Comment=OpenGL 基准，结束后打印 Score
+Exec=xterm -e sh -c "glmark2 --size 640x480; echo; echo '按回车关闭...'; read x"
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Benchmark;

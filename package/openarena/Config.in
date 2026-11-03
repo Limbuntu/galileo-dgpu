@@ -1,0 +1,11 @@
+config BR2_PACKAGE_OPENARENA
+	bool "openarena (free Quake III Arena data + i386 engine)"
+	depends on BR2_PACKAGE_SDL
+	help
+	  OpenArena 0.8.8: a Quake III Arena compatible game with free
+	  (GPL/CC) assets, shipped here with the prebuilt i386 engine binary.
+
+	  Used mainly as an automated GPU/CPU benchmark target: the q3bench
+	  helper runs a timedemo and prints the resulting fps.
+
+	  https://openarena.ws

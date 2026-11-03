@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=gtkperf (2D)
+Comment=GTK 控件绘制基准，结束后打印 total time
+Exec=xterm -e sh -c "gtkperf -a; echo; echo '按回车关闭...'; read x"
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Benchmark;
