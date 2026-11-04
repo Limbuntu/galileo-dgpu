@@ -11,8 +11,8 @@ DOSDRM_LICENSE = MIT
 DOSDRM_DEPENDENCIES = libdrm
 
 define DOSDRM_BUILD_CMDS
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) -o $(@D)/dosdrm \
-		$(@D)/dosdrm.c -ldrm
+	$(TARGET_CC) $(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/libdrm \
+		$(TARGET_LDFLAGS) -o $(@D)/dosdrm $(@D)/dosdrm.c -ldrm
 endef
 
 define DOSDRM_INSTALL_TARGET_CMDS
