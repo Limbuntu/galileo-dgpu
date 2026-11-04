@@ -53,6 +53,13 @@ BR2_PACKAGE_BASH=y
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
 
 # Minetest (Luanti) with software GL
+# radeonsi needs libdrm_amdgpu at configure time; without it Mesa fails with
+# 'Dependency "libdrm_amdgpu" not found' and the image ships swrast only.
+BR2_PACKAGE_LIBDRM=y
+BR2_PACKAGE_LIBDRM_AMDGPU=y
+BR2_PACKAGE_LIBDRM_RADEON=y
+BR2_PACKAGE_LIBDRM_NOUVEAU=y
+
 BR2_PACKAGE_MESA3D=y
 BR2_PACKAGE_MESA3D_DRI_DRIVER_SWRAST=y
 BR2_PACKAGE_MESA3D_OPENGL_GLX=y
