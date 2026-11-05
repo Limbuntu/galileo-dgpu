@@ -20,6 +20,22 @@ Measured on the board (640×480 RGBA, 30 fps, 240 frames):
     $HOST --sysroot=$SYS -O2 -I$SYS/usr/include/libdrm flipplay.c -o flipplay -L$SYS/usr/lib -ldrm
     $HOST --sysroot=$SYS -O2 keywait.c -o keywait
 
+## Streaming frames over the network (no SD write)
+
+    # board
+    flipplay tcp:9000 640 480 0 30      # listens, loads until the sender closes
+    # workstation
+    python3 stream.py <board-ip> 9000 60 <video>
+
+Measured: 5.1 MB/s over the 100 Mbit link (the board, not the wire, is the
+limit). Nothing is written to the SD card.
+
+**Hard limit:** amdgpu's dumb buffers live in shmem (system RAM), and real
+VRAM BOs can only be CPU-mapped through the 256 MB BAR1 window
+(`mem_info_vis_vram_total`). Beyond ~256 MB the allocations fall back to
+system memory and a 540-frame stream triggered the OOM killer. Practical
+capacity is system RAM + swap, i.e. ~300 frames at 640x480 RGBA (10 s).
+
 ## Bake a clip from a video
 
     ffmpeg -i in.mp4 -vf scale=640:480 -pix_fmt bgra -f rawvideo out.rgb

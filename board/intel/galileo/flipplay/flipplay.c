@@ -10,8 +10,13 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <drm_fourcc.h>
 #include <xf86drm.h>
+#include <libdrm/amdgpu.h>
+#include <libdrm/amdgpu_drm.h>
 #include <xf86drmMode.h>
 
 static long long now_ns(void) {
@@ -56,21 +61,68 @@ int main(int argc, char **argv) {
 	FILE *tty = fopen("/dev/tty1", "w");   /* progress is visible on the VT */
 	size_t fsz = (size_t)W * H * 4;
 	unsigned char *frame = malloc(fsz);
-	FILE *f = fopen(path, "rb");
-	if (!f) { perror(path); return 1; }
+	FILE *f;
+	if (!strncmp(path, "tcp:", 4)) {
+		int port = atoi(path + 4);
+		int srv = socket(AF_INET, SOCK_STREAM, 0), one = 1;
+		setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+		int rcv = 1 << 20;
+		setsockopt(srv, SOL_SOCKET, SO_RCVBUF, &rcv, sizeof(rcv));
+		struct sockaddr_in a;
+		memset(&a, 0, sizeof(a));
+		a.sin_family = AF_INET; a.sin_port = htons(port); a.sin_addr.s_addr = INADDR_ANY;
+		if (bind(srv, (struct sockaddr *)&a, sizeof(a)) || listen(srv, 1)) { perror("bind/listen"); return 1; }
+		fprintf(stderr, "listening on tcp/%d\n", port);
+		if (tty) { fprintf(tty, "waiting for stream on port %d...\n", port); fflush(tty); }
+		int c = accept(srv, NULL, NULL);
+		if (c < 0) { perror("accept"); return 1; }
+		f = fdopen(c, "rb");
+		fprintf(stderr, "stream connected\n");
+	} else if (!strcmp(path, "-")) {
+		f = stdin;
+	} else {
+		f = fopen(path, "rb");
+		if (!f) { perror(path); return 1; }
+	}
 
 	int cap = 4096, n = 0;
 	uint32_t *fbs = calloc(cap, sizeof(uint32_t));
+	amdgpu_bo_handle *bo_keep = calloc(cap, sizeof(*bo_keep));
 	long long t0 = now_ns();
+	amdgpu_device_handle adev = NULL;
+	uint32_t maj = 0, minr = 0;
+	if (amdgpu_device_initialize(fd, &maj, &minr, &adev))
+		fprintf(stderr, "warning: libdrm_amdgpu init failed, falling back to GTT dumb buffers\n");
+
 	while (n < cap && fread(frame, 1, fsz, f) == fsz) {
-		struct drm_mode_create_dumb cr = { .width = W, .height = H, .bpp = 32 };
-		if (drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &cr)) { perror("create_dumb"); break; }
-		struct drm_mode_map_dumb mr = { .handle = cr.handle };
-		if (drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &mr)) { perror("map_dumb"); break; }
-		unsigned char *p = mmap(0, cr.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, mr.offset);
-		if (p == MAP_FAILED) { perror("mmap"); break; }
-		memcpy(p, frame, fsz);
-		uint32_t hd[4] = { cr.handle }, pt[4] = { cr.pitch }, of[4] = { 0 };
+		uint32_t handle = 0, pitch = (uint32_t)W * 4;
+		if (adev) {
+			/* Real VRAM BOs: dumb buffers are shmem (system RAM) on amdgpu
+			 * and hit the OOM killer once a few hundred frames pile up. */
+			struct amdgpu_bo_alloc_request areq;
+			memset(&areq, 0, sizeof(areq));
+			areq.alloc_size = fsz;
+			areq.phys_alignment = 4096;
+			areq.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
+			amdgpu_bo_handle bo;
+			if (amdgpu_bo_alloc(adev, &areq, &bo)) { perror("bo_alloc"); break; }
+			void *p = NULL;
+			if (amdgpu_bo_cpu_map(bo, &p)) { perror("bo_cpu_map"); break; }
+			memcpy(p, frame, fsz);
+			amdgpu_bo_cpu_unmap(bo);
+			if (amdgpu_bo_export(bo, amdgpu_bo_handle_type_kms, &handle)) { perror("bo_export"); break; }
+			bo_keep[n] = bo;
+		} else {
+			struct drm_mode_create_dumb cr = { .width = W, .height = H, .bpp = 32 };
+			if (drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &cr)) { perror("create_dumb"); break; }
+			struct drm_mode_map_dumb mr = { .handle = cr.handle };
+			if (drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &mr)) { perror("map_dumb"); break; }
+			unsigned char *p = mmap(0, cr.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, mr.offset);
+			if (p == MAP_FAILED) { perror("mmap"); break; }
+			memcpy(p, frame, fsz);
+			handle = cr.handle; pitch = cr.pitch;
+		}
+		uint32_t hd[4] = { handle }, pt[4] = { pitch }, of[4] = { 0 };
 		if (drmModeAddFB2(fd, W, H, DRM_FORMAT_ARGB8888, hd, pt, of, &fbs[n], 0)) {
 			perror("addfb2"); break;
 		}
@@ -90,13 +142,22 @@ int main(int argc, char **argv) {
 	long long period = (long long)(1e9 / fps);
 	long long start = now_ns();
 	int i = 0, busy = 0;
-	while (seconds <= 0 || (now_ns() - start) / 1e9 < seconds) {
+	for (;;) {
+		if (seconds > 0 && (now_ns() - start) / 1e9 >= seconds) break;
 		long long target = start + (long long)i * period;
 		long long d = target - now_ns();
-		if (d > 0) usleep((useconds_t)(d / 1000));
-		if (drmModePageFlip(fd, crtc_id, fbs[i % n], 0, NULL))
+		if (d > 0) {
+			usleep((useconds_t)(d / 1000));
+		} else if (d < -period) {
+			/* behind schedule: skip frames instead of bursting */
+			i += (int)((-d) / period);
+		}
+		if (drmModePageFlip(fd, crtc_id, fbs[i % n], 0, NULL) == 0) {
+			i++;
+		} else {
 			busy++;
-		i++;
+			usleep(2000);   /* queue full: wait for the pending flip */
+		}
 	}
 	fprintf(stderr, "played %d flips, %d busy\n", i, busy);
 	return 0;
