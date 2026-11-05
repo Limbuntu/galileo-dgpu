@@ -48,6 +48,12 @@ start_x() {
 		echo "S50desktop: Xorg failed to start"
 		return 1
 	fi
+	# Pin every connected output to 1080p: the panel advertises
+	# 1280x1024@120 and 2560x1440, and X sometimes leaves the output disabled
+	# after a restart, which makes the monitor go dark.
+	for o in $(DISPLAY=:0 xrandr 2>/dev/null | awk '/ connected/{print $1}'); do
+		DISPLAY=:0 xrandr --output "$o" --auto --mode 1920x1080 2>/dev/null
+	done
 	(
 		n=0
 		while [ $n -lt 15 ]; do
