@@ -15,8 +15,7 @@
 #include <arpa/inet.h>
 #include <drm_fourcc.h>
 #include <xf86drm.h>
-#include <libdrm/amdgpu.h>
-#include <libdrm/amdgpu_drm.h>
+#include <gbm.h>
 #include <xf86drmMode.h>
 
 static long long now_ns(void) {
@@ -87,45 +86,29 @@ int main(int argc, char **argv) {
 
 	int cap = 4096, n = 0;
 	uint32_t *fbs = calloc(cap, sizeof(uint32_t));
-	amdgpu_bo_handle *bo_keep = calloc(cap, sizeof(*bo_keep));
 	long long t0 = now_ns();
-	amdgpu_device_handle adev = NULL;
-	uint32_t maj = 0, minr = 0;
-	if (amdgpu_device_initialize(fd, &maj, &minr, &adev))
-		fprintf(stderr, "warning: libdrm_amdgpu init failed, falling back to GTT dumb buffers\n");
+	struct gbm_device *gbm = gbm_create_device(fd);
+	if (!gbm) { fprintf(stderr, "gbm_create_device failed\n"); return 1; }
+	fprintf(stderr, "gbm backend: %s\n", gbm_device_get_backend_name(gbm));
+	struct gbm_bo **bos = calloc(cap, sizeof(*bos));
 
 	while (n < cap && fread(frame, 1, fsz, f) == fsz) {
-		uint32_t handle = 0, pitch = (uint32_t)W * 4;
-		if (adev) {
-			/* Real VRAM BOs: dumb buffers are shmem (system RAM) on amdgpu
-			 * and hit the OOM killer once a few hundred frames pile up. */
-			struct amdgpu_bo_alloc_request areq;
-			memset(&areq, 0, sizeof(areq));
-			areq.alloc_size = fsz;
-			areq.phys_alignment = 4096;
-			areq.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
-			amdgpu_bo_handle bo;
-			if (amdgpu_bo_alloc(adev, &areq, &bo)) { perror("bo_alloc"); break; }
-			void *p = NULL;
-			if (amdgpu_bo_cpu_map(bo, &p)) { perror("bo_cpu_map"); break; }
-			memcpy(p, frame, fsz);
-			amdgpu_bo_cpu_unmap(bo);
-			if (amdgpu_bo_export(bo, amdgpu_bo_handle_type_kms, &handle)) { perror("bo_export"); break; }
-			bo_keep[n] = bo;
-		} else {
-			struct drm_mode_create_dumb cr = { .width = W, .height = H, .bpp = 32 };
-			if (drmIoctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &cr)) { perror("create_dumb"); break; }
-			struct drm_mode_map_dumb mr = { .handle = cr.handle };
-			if (drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &mr)) { perror("map_dumb"); break; }
-			unsigned char *p = mmap(0, cr.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, mr.offset);
-			if (p == MAP_FAILED) { perror("mmap"); break; }
-			memcpy(p, frame, fsz);
-			handle = cr.handle; pitch = cr.pitch;
-		}
-		uint32_t hd[4] = { handle }, pt[4] = { pitch }, of[4] = { 0 };
+		/* Legacy (non-DC) KMS cannot scan out tiled buffers: ask for linear. */
+		struct gbm_bo *bo = gbm_bo_create(gbm, W, H, GBM_FORMAT_ARGB8888,
+						  GBM_BO_USE_SCANOUT | GBM_BO_USE_LINEAR);
+		if (!bo) { perror("gbm_bo_create"); break; }
+		uint32_t stride = 0;
+		void *map_data = NULL;
+		void *p = gbm_bo_map(bo, 0, 0, W, H, GBM_BO_TRANSFER_WRITE, &stride, &map_data);
+		if (!p) { perror("gbm_bo_map"); break; }
+		memcpy(p, frame, (size_t)stride < fsz ? (size_t)stride * H : fsz);
+		gbm_bo_unmap(bo, map_data);
+		uint32_t handle = gbm_bo_get_handle(bo).u32;
+		uint32_t hd[4] = { handle }, pt[4] = { stride }, of[4] = { 0 };
 		if (drmModeAddFB2(fd, W, H, DRM_FORMAT_ARGB8888, hd, pt, of, &fbs[n], 0)) {
 			perror("addfb2"); break;
 		}
+		bos[n] = bo;
 		n++;
 		if (n % 30 == 0) {
 			fprintf(stderr, "  loading %d frames...\n", n);
