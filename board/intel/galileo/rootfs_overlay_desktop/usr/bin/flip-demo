@@ -1,0 +1,29 @@
+#!/bin/sh
+# Pre-baked playback: every frame already lives in its own KMS framebuffer
+# (VRAM), so the playback loop only page-flips. Measured on the board:
+# user CPU 0%, system CPU ~9% at 640x480@30, versus 85-98% for a player that
+# converts every frame.
+#
+# Exit is handled by keywait (raw evdev), not by reading the VT: a background
+# job's stdin is not reliable for terminal input, and evdev works regardless
+# of tty mode or job control.
+RAW="${1:-/root/media/bbb_raw.rgb}"
+W="${2:-640}"
+H="${3:-480}"
+[ -f "$RAW" ] || { echo "flip-demo: missing $RAW" >&2; exit 1; }
+[ -x /usr/bin/flipplay ] || { echo "flip-demo: missing /usr/bin/flipplay" >&2; exit 1; }
+
+/etc/init.d/S50desktop stop >/dev/null 2>&1
+sleep 2
+openvt -c 1 -s -- true 2>/dev/null   # show progress on VT1
+
+/usr/bin/flipplay "$RAW" "$W" "$H" 0 30 >/root/flip.log 2>&1 &
+P=$!
+/usr/bin/keywait
+kill $P 2>/dev/null
+wait $P 2>/dev/null
+
+/etc/init.d/S50desktop start >/root/s50.log 2>&1
+sleep 5
+[ -x /usr/bin/media-ui ] && setsid env DISPLAY=:0 /usr/bin/media-ui >/dev/null 2>&1 &
+exit 0

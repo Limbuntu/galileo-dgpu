@@ -2,12 +2,13 @@
 #
 # Why coreboot at all: the board ships UEFI-only firmware with no CSM, and DOS
 # needs real-mode BIOS services, so running FreeDOS/MS-DOS natively means
-# replacing the firmware. coreboot 4.4-4.7 are the releases that still carry
-# src/soc/intel/quark + src/mainboard/intel/galileo.
+# replacing the firmware. coreboot 4.20.x is the last series that still carries
+# src/soc/intel/quark + src/mainboard/intel/galileo (4.21 removed them).
 #
 # This image only provides the toolchain; build-rom.sh extracts the coreboot
-# 4.7 release tarball (provisioned on the CI host at /opt/git-assets, or fetched
-# from coreboot.org as fallback) and produces /out/coreboot.rom.
+# 4.20.1 release tarball (provisioned on the CI host at /opt/git-assets, or
+# fetched from coreboot.org as fallback), injects the vendored FSP/RMU blobs and
+# produces /out/coreboot.rom.
 FROM debian:12
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,21 +23,11 @@ RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
         m4 bison flex bc libelf-dev curl ca-certificates xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# coreboot 4.7 is incompatible with GNU make >= 4.3: its Makefile.inc defines a
-# variable whose name is a single space, which make 4.3 turns into a segfault.
-# Build make 4.2.1 instead; its bundled gnulib glob still calls __alloca/__stat,
-# removed from modern glibc, so rewrite those two symbols.
-RUN curl -sSL https://mirrors.tuna.tsinghua.edu.cn/gnu/make/make-4.2.1.tar.gz -o /tmp/m.tgz \
-    && tar xf /tmp/m.tgz -C /tmp \
-    && cd /tmp/make-4.2.1 \
-    && sed -i 's/__alloca/alloca/g; s/__stat/stat/g' glob/glob.c \
-    && ./configure --prefix=/opt/make42 >/dev/null \
-    && make -j"$(nproc)" >/dev/null \
-    && make install >/dev/null \
-    && /opt/make42/bin/make --version | head -1
-ENV PATH=/opt/make42/bin:$PATH
+# coreboot 4.20.x builds fine with the distribution's GNU make (4.3); the
+# make-4.2.1 workaround was only needed for the 4.7 tree.
 
-COPY build-rom.sh /usr/local/bin/build-rom.sh
-RUN chmod +x /usr/local/bin/build-rom.sh
+COPY build-rom.sh compose-flash.sh /usr/local/bin/
+COPY blobs /usr/local/bin/blobs
+RUN chmod +x /usr/local/bin/build-rom.sh /usr/local/bin/compose-flash.sh
 
 CMD ["/usr/local/bin/build-rom.sh"]
