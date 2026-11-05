@@ -4,6 +4,9 @@
  * Talks to ALSA through amixer(1); no pulseaudio involved.
  */
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -138,6 +141,28 @@ static gboolean on_icon_click(GtkWidget *w, GdkEventButton *b, gpointer d)
 	return TRUE;
 }
 
+static KeyCode hotkey_code;
+
+static GdkFilterReturn hotkey_filter(GdkXEvent *xe, GdkEvent *e, gpointer d)
+{
+	(void)e; (void)d;
+	XEvent *x = (XEvent *)xe;
+	if (x->type == KeyPress && x->xkey.keycode == hotkey_code &&
+	    (x->xkey.state & (ControlMask | Mod1Mask)) == (ControlMask | Mod1Mask)) {
+		toggle(NULL, NULL);
+		return GDK_FILTER_REMOVE;
+	}
+	return GDK_FILTER_CONTINUE;
+}
+
+static gboolean raise_icon(gpointer d)
+{
+	(void)d;
+	if (gtk_widget_get_window(icon))
+		gdk_window_raise(gtk_widget_get_window(icon));
+	return TRUE;
+}
+
 int main(int argc, char **argv)
 {
 	gtk_init(&argc, &argv);
@@ -191,6 +216,19 @@ int main(int argc, char **argv)
 		gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
 		popup_shown = 1;
 	}
+
+	/* global hotkey: Ctrl+Alt+V toggles the dialog even if the panel eats
+	 * clicks on the icon */
+	{
+		Display *dpy = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
+		Window root = DefaultRootWindow(dpy);
+		hotkey_code = XKeysymToKeycode(dpy, XK_v);
+		XGrabKey(dpy, hotkey_code, ControlMask | Mod1Mask, root, True,
+			 GrabModeAsync, GrabModeAsync);
+		XSync(dpy, False);
+		gdk_window_add_filter(NULL, hotkey_filter, NULL);
+	}
+	g_timeout_add(1000, raise_icon, NULL);
 
 	gtk_main();
 	return 0;
