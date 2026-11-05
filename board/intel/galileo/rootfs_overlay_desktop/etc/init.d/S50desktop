@@ -63,8 +63,10 @@ start_x() {
 			n=$((n+1))
 		done
 	) &
-	# tray-style volume icon (GTK2, docked to the right end of the panel)
-	[ -x /usr/bin/volctl ] && setsid /usr/bin/volctl >/dev/null 2>&1 &
+	# tray-style volume icon (GTK2, docked to the right end of the panel);
+	# it needs DISPLAY like every other client, and the panel must exist first
+	sleep 2
+	[ -x /usr/bin/volctl ] && setsid env DISPLAY=:0 /usr/bin/volctl >/dev/null 2>&1 &
 	echo "S50desktop: desktop up"
 }
 
