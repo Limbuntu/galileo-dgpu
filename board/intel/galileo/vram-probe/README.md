@@ -20,3 +20,22 @@ Two questions this answers, on the board:
   32-bit MMIO window cannot hold a 2 GB BAR anyway.
 * Therefore frames must reach VRAM through the GPU: render into GBM BOs with
   GL (Mesa), or submit SDMA copies. Unimplemented so far.
+
+## The working path: SDMA copy (2026-11-06)
+
+CPU cannot reach VRAM past the 256 MB BAR window, and `amdgpu_bo_cpu_map` on
+such BOs allocates a GTT shadow that exhausts system RAM (~500 frames → OOM).
+`gbm_bo_map` looks like it works but linear GBM buffers are allocated in GTT,
+so `vram_used` stops at 274 MB and RAM fills the same way.
+
+What does work: allocate per-frame BOs in VRAM and fill them with the **SDMA
+engine** from a small GTT staging ring. Verified:
+
+* `sdmadma` — 64 KB GTT→VRAM copy, destination verified byte-for-byte.
+* `sdmabig 1800` — 1800 × 1.23 MB = 2109 MB copied into VRAM in 30.9 s
+  (68 MB/s), `mem_info_vram_used` = 2048 MB, GTT stays at 15 MB.
+* `flipplay tcp:9000` + `stream.py` — 705 MB / 602 frames streamed from a
+  workstation, `vram_used` 472 MB, playback by page flip.
+
+The SDMA packet is 7 dwords (see `sdma_v3_0_emit_copy_buffer` in the kernel):
+`header(COPY|COPY_LINEAR), byte_count, 0, src_lo, src_hi, dst_lo, dst_hi`.
