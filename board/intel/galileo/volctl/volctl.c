@@ -140,8 +140,13 @@ int main(int argc, char **argv)
 	gtk_widget_modify_bg(da, GTK_STATE_NORMAL,
 		&(GdkColor){ 0, 0x2a2a, 0x2a2a, 0x2a2a });
 	gtk_container_add(GTK_CONTAINER(icon), da);
+	/* a GtkDrawingArea receives no input events unless the mask is added */
+	gtk_widget_add_events(da, GDK_BUTTON_PRESS_MASK);
 	g_signal_connect(da, "button-press-event", G_CALLBACK(on_icon_click), NULL);
 	g_signal_connect(da, "expose-event", G_CALLBACK(icon_draw), NULL);
+	/* belt and braces: catch the click on the toplevel too */
+	gtk_widget_add_events(icon, GDK_BUTTON_PRESS_MASK);
+	g_signal_connect(icon, "button-press-event", G_CALLBACK(on_icon_click), NULL);
 	/* sit inside the 28px taskbar strip, left of the CPU graph */
 	gtk_window_move(GTK_WINDOW(icon), 1146, 1000);
 	gtk_widget_show_all(icon);
