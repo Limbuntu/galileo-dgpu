@@ -63,6 +63,8 @@ start_x() {
 			n=$((n+1))
 		done
 	) &
+	# tray-style volume icon (GTK2, docked to the right end of the panel)
+	[ -x /usr/bin/volctl ] && setsid /usr/bin/volctl >/dev/null 2>&1 &
 	echo "S50desktop: desktop up"
 }
 
