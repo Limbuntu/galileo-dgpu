@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Media Console
+Name[zh_CN]=媒体控制台
+Comment=Play the on-board audio and video files
+Exec=/usr/bin/media-ui
+Icon=multimedia-player
+Terminal=false
+Categories=Utility;AudioVideo;Audio;Video;Player;
+StartupNotify=false

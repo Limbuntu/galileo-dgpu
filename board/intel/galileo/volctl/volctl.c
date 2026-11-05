@@ -121,7 +121,7 @@ static void toggle(GtkWidget *w, gpointer d)
 {
 	(void)w; (void)d;
 	if (popup_shown) {
-		gtk_window_move(GTK_WINDOW(popup), 30000, 30000);
+		gtk_widget_hide(popup);
 		popup_shown = 0;
 	} else {
 		int v = vol_get();
@@ -130,6 +130,7 @@ static void toggle(GtkWidget *w, gpointer d)
 		gtk_combo_box_set_active(GTK_COMBO_BOX(combo), card == 1 ? 0 : 1);
 		updating = 0;
 		gtk_window_move(GTK_WINDOW(popup), 410, 380);
+		gtk_widget_show_all(popup);
 		gtk_window_present(GTK_WINDOW(popup));
 		popup_shown = 1;
 	}
@@ -250,7 +251,8 @@ int main(int argc, char **argv)
 	gtk_box_pack_start(GTK_BOX(vb), combo, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(popup), vb);
 	gtk_widget_show_all(popup);
-	gtk_window_move(GTK_WINDOW(popup), 30000, 30000);
+	gtk_window_move(GTK_WINDOW(popup), 410, 380);
+	gtk_widget_hide(popup);          /* keep it unmapped until asked for */
 	if (argc > 1 && strcmp(argv[1], "--show") == 0) {
 		int v = vol_get();
 		updating = 1;
