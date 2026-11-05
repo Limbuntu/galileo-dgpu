@@ -105,17 +105,30 @@ static void on_card(GtkComboBox *c, gpointer d)
 	updating = 0;
 }
 
+static int popup_shown;
+
+/* Hiding a mapped toplevel makes the WM restack windows, which then buries
+ * the override-redirect icon window under lxpanel: keep the dialog mapped and
+ * move it off-screen instead. */
 static void toggle(GtkWidget *w, gpointer d)
 {
-	if (gtk_widget_get_visible(popup)) gtk_widget_hide(popup);
-	else {
+	(void)w; (void)d;
+	if (popup_shown) {
+		gtk_window_move(GTK_WINDOW(popup), 30000, 30000);
+		popup_shown = 0;
+	} else {
 		int v = vol_get();
 		updating = 1;
 		gtk_range_set_value(GTK_RANGE(scale), v < 0 ? 0 : v);
 		gtk_combo_box_set_active(GTK_COMBO_BOX(combo), card == 1 ? 0 : 1);
 		updating = 0;
-		gtk_widget_show_all(popup);
+		gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
+		gtk_window_present(GTK_WINDOW(popup));
+		popup_shown = 1;
 	}
+	/* keep the icon on top of the panel after any restack */
+	if (gtk_widget_get_window(icon))
+		gdk_window_raise(gtk_widget_get_window(icon));
 }
 
 static gboolean on_icon_click(GtkWidget *w, GdkEventButton *b, gpointer d)
@@ -144,9 +157,6 @@ int main(int argc, char **argv)
 	gtk_widget_add_events(da, GDK_BUTTON_PRESS_MASK);
 	g_signal_connect(da, "button-press-event", G_CALLBACK(on_icon_click), NULL);
 	g_signal_connect(da, "expose-event", G_CALLBACK(icon_draw), NULL);
-	/* belt and braces: catch the click on the toplevel too */
-	gtk_widget_add_events(icon, GDK_BUTTON_PRESS_MASK);
-	g_signal_connect(icon, "button-press-event", G_CALLBACK(on_icon_click), NULL);
 	/* sit inside the 28px taskbar strip, left of the CPU graph */
 	gtk_window_move(GTK_WINDOW(icon), 1146, 1000);
 	gtk_widget_show_all(icon);
@@ -172,14 +182,14 @@ int main(int argc, char **argv)
 	gtk_box_pack_start(GTK_BOX(vb), combo, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(popup), vb);
 	gtk_widget_show_all(popup);
-	gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
-	gtk_widget_hide(popup);
+	gtk_window_move(GTK_WINDOW(popup), 30000, 30000);
 	if (argc > 1 && strcmp(argv[1], "--show") == 0) {
 		int v = vol_get();
 		updating = 1;
 		gtk_range_set_value(GTK_RANGE(scale), v < 0 ? 0 : v);
 		updating = 0;
-		gtk_widget_show_all(popup);
+		gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
+		popup_shown = 1;
 	}
 
 	gtk_main();
