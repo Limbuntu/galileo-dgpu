@@ -225,3 +225,20 @@ DISPLAY=:0 glmark2 --fullscreen
 DISPLAY=:0 gtkperf -a
 DISPLAY=:0 x11perf -rect500 -copywinwin500 -compwinwin500 -putimage500 -repeat 20
 ```
+
+### CPU — SuperPI / 7-Zip（同一镜像，GPU 加速后复测）
+
+| 项目 | 结果 | 对照 |
+|---|---|---|
+| SuperPI 1M (`pi_css5 1000000`) | **302.67 s** | nvidia 镜像 306.63 s（同一 CPU，属噪声范围） |
+| 7-Zip `7zr b` 压缩 | 95 KiB/s，95 MIPS，rating 91 | — |
+| 7-Zip `7zr b` 解压 | 1421 KiB/s，127 MIPS，rating 121 | — |
+| 7-Zip Tot | **112 MIPS**（历史记录 111） | 单线程，CPU 受限 |
+
+说明：这两项只测 CPU，与 GPU/radeonsi 无关；放在这里是为了确认整机在
+GL 4.6 + glamor 环境下没有因为驱动栈而退化。`7zr b` 固定单线程
+（`# Benchmark threads: 1`），Tot 行的 112 是压缩/解压的合计。
+
+终端窗口参数（录屏用）：`xterm -fa "Menlo:size=16" -geometry 80x30+120+180`；
+镜像原本没有等宽字体（`fc-match Monospace` → DejaVu Sans 比例字体），
+录屏前需把 Menlo 之类等宽字体放进 `/usr/share/fonts/` 并 `fc-cache -f`。
