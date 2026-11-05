@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #define CONF "/etc/asound.conf"
 
@@ -78,13 +79,16 @@ static void pick_ctl(void)
 static gboolean icon_draw(GtkWidget *w, GdkEventExpose *e, gpointer d)
 {
 	cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(w));
-	double h = w->allocation.height;
-	cairo_set_source_rgb(cr, 0.85, 0.9, 1.0);
-	cairo_rectangle(cr, 4, h/2 - 4, 5, 8); cairo_fill(cr);
-	cairo_move_to(cr, 9, h/2 - 4); cairo_line_to(cr, 17, h/2 - 9);
-	cairo_line_to(cr, 17, h/2 + 9); cairo_line_to(cr, 9, h/2 + 4);
+	double wd = w->allocation.width, h = w->allocation.height;
+	double s = h / 24.0;              /* scale the 24px design to the widget */
+	cairo_scale(cr, s, s);
+	cairo_set_source_rgb(cr, 0.90, 0.94, 1.0);
+	cairo_rectangle(cr, 4, 12 - 4, 5, 8); cairo_fill(cr);
+	cairo_move_to(cr, 9, 12 - 4); cairo_line_to(cr, 17, 12 - 9);
+	cairo_line_to(cr, 17, 12 + 9); cairo_line_to(cr, 9, 12 + 4);
 	cairo_close_path(cr); cairo_fill(cr);
-	cairo_set_line_width(cr, 2); cairo_arc(cr, 17, h/2, 6, -0.9, 0.9); cairo_stroke(cr);
+	cairo_set_line_width(cr, 2); cairo_arc(cr, 17, 12, 6, -0.9, 0.9); cairo_stroke(cr);
+	(void)wd;
 	cairo_destroy(cr);
 	return FALSE;
 }
@@ -125,7 +129,7 @@ static void toggle(GtkWidget *w, gpointer d)
 		gtk_range_set_value(GTK_RANGE(scale), v < 0 ? 0 : v);
 		gtk_combo_box_set_active(GTK_COMBO_BOX(combo), card == 1 ? 0 : 1);
 		updating = 0;
-		gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
+		gtk_window_move(GTK_WINDOW(popup), 410, 380);
 		gtk_window_present(GTK_WINDOW(popup));
 		popup_shown = 1;
 	}
@@ -153,6 +157,40 @@ static GdkFilterReturn hotkey_filter(GdkXEvent *xe, GdkEvent *e, gpointer d)
 		return GDK_FILTER_REMOVE;
 	}
 	return GDK_FILTER_CONTINUE;
+}
+
+static int media_console_running(void)
+{
+	DIR *d = opendir("/proc");
+	struct dirent *e;
+	char path[64], buf[512];
+	int found = 0;
+	if (!d) return 0;
+	while ((e = readdir(d)) != NULL) {
+		if (e->d_name[0] < '0' || e->d_name[0] > '9') continue;
+		snprintf(path, sizeof path, "/proc/%s/cmdline", e->d_name);
+		FILE *f = fopen(path, "r");
+		if (!f) continue;
+		size_t n = fread(buf, 1, sizeof buf - 1, f);
+		fclose(f);
+		buf[n] = 0;
+		if (n > 0 && buf[n-1] == 0) n--;   /* keep the last NUL as terminator */
+		/* cmdline is NUL separated; strstr would stop at the first NUL */
+		for (size_t i = 0; i < n; i++) if (buf[i] == 0) buf[i] = ' ';
+		if (strstr(buf, "media-console")) { found = 1; break; }
+	}
+	closedir(d);
+	return found;
+}
+
+static gboolean sync_visibility(gpointer d)
+{
+	(void)d;
+	int run = media_console_running();
+	if (getenv("VOLCTL_DEBUG")) fprintf(stderr, "console=%d visible=%d\n", run, gtk_widget_get_visible(icon));
+	if (run && !gtk_widget_get_visible(icon)) gtk_widget_show_all(icon);
+	else if (!run && gtk_widget_get_visible(icon)) gtk_widget_hide(icon);
+	return TRUE;
 }
 
 static gboolean raise_icon(gpointer d)
@@ -192,14 +230,19 @@ int main(int argc, char **argv)
 	gtk_window_set_keep_above(GTK_WINDOW(popup), TRUE);
 	gtk_window_set_skip_taskbar_hint(GTK_WINDOW(popup), TRUE);
 	gtk_window_set_position(GTK_WINDOW(popup), GTK_WIN_POS_NONE);
-	GtkWidget *vb = gtk_vbox_new(FALSE, 6);
-	GtkWidget *lbl = gtk_label_new("Volume");
+	gtk_window_set_default_size(GTK_WINDOW(popup), 460, 190);
+	GtkWidget *vb = gtk_vbox_new(FALSE, 12);
+	gtk_container_set_border_width(GTK_CONTAINER(vb), 16);
+	GtkWidget *lbl = gtk_label_new(NULL);
+	gtk_label_set_markup(GTK_LABEL(lbl), "<b><big>Master Volume</big></b>");
 	gtk_box_pack_start(GTK_BOX(vb), lbl, FALSE, FALSE, 0);
 	scale = gtk_hscale_new_with_range(0, 100, 1);
-	gtk_widget_set_size_request(scale, 220, -1);
+	gtk_widget_set_size_request(scale, 420, 60);
+	gtk_scale_set_value_pos(GTK_SCALE(scale), GTK_POS_TOP);
 	g_signal_connect(scale, "value-changed", G_CALLBACK(on_scale), NULL);
 	gtk_box_pack_start(GTK_BOX(vb), scale, FALSE, FALSE, 0);
 	combo = gtk_combo_box_text_new();
+	gtk_widget_set_size_request(combo, 200, 40);
 	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), "USB Audio (card1)");
 	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), "HDMI (card0)");
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
@@ -213,7 +256,7 @@ int main(int argc, char **argv)
 		updating = 1;
 		gtk_range_set_value(GTK_RANGE(scale), v < 0 ? 0 : v);
 		updating = 0;
-		gtk_window_move(GTK_WINDOW(popup), 1000, 1024 - 220);
+		gtk_window_move(GTK_WINDOW(popup), 410, 380);
 		popup_shown = 1;
 	}
 
@@ -229,6 +272,8 @@ int main(int argc, char **argv)
 		gdk_window_add_filter(NULL, hotkey_filter, NULL);
 	}
 	g_timeout_add(1000, raise_icon, NULL);
+	g_timeout_add(2000, sync_visibility, NULL);
+	sync_visibility(NULL);
 
 	gtk_main();
 	return 0;
