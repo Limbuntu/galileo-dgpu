@@ -123,3 +123,6 @@ BR2_PACKAGE_XLIB_LIBXRES=y
 # VDPAU state tracker: hardware video decode through radeonsi/UVD
 BR2_PACKAGE_MESA3D_VDPAU=y
 BR2_PACKAGE_LIBVDPAU=y
+
+# mpv: VDPAU decode + VDPAU/GPU presentation (ffplay cannot present vdpau frames)
+BR2_PACKAGE_MPV=y
