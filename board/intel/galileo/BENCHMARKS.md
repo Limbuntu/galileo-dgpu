@@ -167,3 +167,61 @@ ssh root@<ip> "chmod +x /usr/bin/pi_css5 /usr/bin/7zr /usr/bin/bench"
 - 跑分工具与启动器:`board/intel/galileo/rootfs_overlay_nvidia/usr/bin/{bench,pi_css5,7zr}`
 - 对应提交:`ac39ecf` "nvidia image: include SuperPI (pi_css5) + 7-Zip (7zr) + bench launcher"
 - p7zip 包定义:`package/p7zip/`
+
+## 9. GPU 加速后的 2D / 3D 基线（2026-11-05，RX 580 + radeonsi）
+
+环境：Galileo Gen 2 (Quark X1000 400 MHz / 203 MB)，RX 580 2048SP，
+内核 5.10.29（amdgpu，无 DC），Mesa 20.2.2 + LLVM 9.0.1，
+`glxinfo`：`Accelerated: yes`、`GL 4.6 (Compatibility Profile)`、
+`AMD POLARIS10 (DRM 3.40.0...)`，Xorg `glamor initialized`，显示 1280×1024。
+
+驱动是热拷贝进镜像的（未重刷）：
+`radeonsi_dri.so`、`libLLVM-9.so`、`libdrm_amdgpu.so.1`、`libdrm_nouveau.so.2`。
+
+### 3D — glmark2（`--fullscreen`，默认套件）
+
+| 场景 | FPS | 场景 | FPS |
+|---|---|---|---|
+| build (use-vbo) | 130–136 | effect2d (kernel) | 114–131 |
+| texture (filter) | 137 | pulsar | 107 |
+| shading (gouraud/phong/cel) | 122–138 | desktop (blur/shadow) | 53–54 |
+| bump (high-poly/normals/height) | 123–137 | buffer (map/subdata) | 5–10 |
+
+**glmark2 Score: 101**
+
+解读：GPU 侧帧率普遍 120–137 FPS，`desktop`/`buffer` 两个场景掉到 5–54 FPS ——
+瓶颈是 400 MHz Quark 的 CPU 提交与纹理更新，不是 GPU。
+
+### 2D — gtkperf（`-a`，应用级）
+
+| 项目 | 软件渲染 | GPU（glamor） |
+|---|---|---|
+| Total | 588.23 s | **320.64 s** |
+| GtkComboBox | 38.10 | 22.68 |
+| GtkComboBoxEntry | 27.60 | 15.67 |
+| GtkTextView - Add text | 32.91 | 14.75 |
+| GtkTextView - Scroll | 17.48 | 9.29 |
+| GtkDrawingArea - Lines | 272.33 | 97.31 |
+| GtkDrawingArea - Circles | 145.77 | 102.61 |
+| GtkDrawingArea - Text | 30.29 | 24.26 |
+| GtkDrawingArea - Pixbufs | 4.07 | 10.07 |
+
+GTK 的绘制大头在 cairo 的 CPU 光栅化（image backend），glamor 只加速最后的
+blit/合成，所以总时间约 1.8×，不会更接近 0。
+
+### 2D — x11perf（X 原语，最直接反映 glamor）
+
+| 测试 | 软件（ShadowFB） | GPU（glamor） | 提升 |
+|---|---|---|---|
+| `-rect500` | 13.4 /s | **1330 /s** | 99× |
+| `-copywinwin500` | 10.9 /s | **143 /s** | 13× |
+| `-compwinwin500` | — | **139 /s** | — |
+| `-putimage500` | — | **9.5 /s** | 瓶颈在客户端→服务端上传 |
+
+### 复现
+
+```sh
+DISPLAY=:0 glmark2 --fullscreen
+DISPLAY=:0 gtkperf -a
+DISPLAY=:0 x11perf -rect500 -copywinwin500 -compwinwin500 -putimage500 -repeat 20
+```
