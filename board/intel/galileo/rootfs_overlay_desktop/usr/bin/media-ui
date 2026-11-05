@@ -1,0 +1,4 @@
+#!/bin/sh
+# open the media console on the X display
+exec env DISPLAY=:0 xterm -fa "Menlo:size=16" -bg '#101018' -fg '#d0e0ff' \
+	-geometry 80x24+120+150 -T "Galileo Media Console" -e /usr/bin/media-console
