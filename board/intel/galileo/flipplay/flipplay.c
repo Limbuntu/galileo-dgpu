@@ -141,6 +141,16 @@ int main(int argc, char **argv) {
 		if (drmModeAddFB2(fd, W, H, DRM_FORMAT_ARGB8888, &h, &pitch, &off, &fbs[n], 0)) { perror("addfb2"); break; }
 		bos[n] = bo;
 		n++;
+		if (n % 100 == 0) {
+			FILE *m = fopen("/proc/meminfo", "r"); char k[64]; long v, fr = -1, sw = -1, sh = -1;
+			while (m && fscanf(m, "%63s %ld", k, &v) == 2) {
+				if (!strcmp(k, "MemFree:")) fr = v;
+				if (!strcmp(k, "SwapFree:")) sw = v;
+				if (!strcmp(k, "Shmem:")) sh = v;
+			}
+			if (m) fclose(m);
+			fprintf(stderr, "  [%d] memfree=%ldkB swapfree=%ldkB shmem=%ldkB\n", n, fr, sw, sh);
+		}
 		if (n % 30 == 0) {
 			fprintf(stderr, "  loaded %d frames...\n", n);
 			if (tty) { fprintf(tty, "loading %d frames...\n", n); fflush(tty); }

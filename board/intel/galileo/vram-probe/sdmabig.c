@@ -8,6 +8,8 @@
 #include <time.h>
 #include <libdrm/amdgpu.h>
 #include <libdrm/amdgpu_drm.h>
+#include <drm_fourcc.h>
+#include <xf86drmMode.h>
 
 static long sysf(const char *p){FILE*f=fopen(p,"r");long v=-1;if(f){fscanf(f,"%ld",&v);fclose(f);}return v;}
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec/1e9;}
@@ -25,6 +27,8 @@ static amdgpu_bo_handle alloc(uint32_t dom, size_t sz, void **cpu) {
 
 int main(int argc, char **argv) {
 	int n = argc > 1 ? atoi(argv[1]) : 1800;
+	int do_fb = argc > 2 ? atoi(argv[2]) : 0;
+	int drmfd = open("/dev/dri/card0", O_RDWR);
 	size_t fsz = 640u*480*4;
 	int fd = open("/dev/dri/card0", O_RDWR);
 	uint32_t ma, mi;
@@ -70,8 +74,21 @@ int main(int argc, char **argv) {
 		f.context=ctx; f.ip_type=AMDGPU_HW_IP_DMA; f.fence=rq.seq_no;
 		uint32_t exp=0;
 		for (int t=0;t<500;t++){ if(!amdgpu_cs_query_fence_status(&f,5000000ULL,0,&exp)&&exp) break; }
+		if (do_fb) {
+			uint32_t h = 0, pitch = 640*4, off = 0, fb = 0;
+			if (amdgpu_bo_export(dst[i], amdgpu_bo_handle_type_kms, &h)) { printf("export fail %d\n", i); break; }
+			if (drmModeAddFB2(fd, 640, 480, DRM_FORMAT_ARGB8888, &h, &pitch, &off, &fb, 0)) { perror("addfb"); printf("i=%d handle=%u pitch=%u\n", i, h, pitch); break; }
+		}
 		amdgpu_bo_list_destroy(list);
 		ok++;
+		if (do_fb && ok % 300 == 0) {
+			FILE*f=fopen("/proc/meminfo","r");char k[64];long v,fr=-1,sh=-1;
+			while(fscanf(f,"%63s %ld",k,&v)==2){ if(!strcmp(k,"MemFree:"))fr=v; if(!strcmp(k,"Shmem:"))sh=v; }
+			fclose(f);
+			printf("  %d frames: memfree=%ldkB shmem=%ldkB vram=%.0fMB\n", ok, fr, sh,
+			       sysf("/sys/class/drm/card0/device/mem_info_vram_used")/1048576.0);
+			fflush(stdout);
+		}
 	}
 	double dt = now()-t0;
 	printf("filled %d frames (%.0f MB) in %.1fs = %.1f MB/s\n", ok, ok*fsz/1048576.0, dt, ok*fsz/1048576.0/dt);
