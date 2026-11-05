@@ -158,9 +158,16 @@ endif
 #   - Building OpenGL ES without OpenGL is not supported, so always keep opengl enabled.
 MESA3D_CONF_OPTS += -Dopengl=true
 
-# libva and mesa3d have a circular dependency
-# we do not need libva support in mesa3d, therefore disable this option
+# libva and mesa3d form a cycle only through libva's optional GLX backend;
+# libva is built without glx (see package/libva/libva.mk), so enabling the
+# gallium VA-API state tracker is safe and gives hardware video decode
+# without X11 (needed by the KMS/drm output path).
+ifeq ($(BR2_PACKAGE_LIBVA),y)
+MESA3D_DEPENDENCIES += libva
+MESA3D_CONF_OPTS += -Dgallium-va=enabled
+else
 MESA3D_CONF_OPTS += -Dgallium-va=disabled
+endif
 
 # libGL is only provided for a full xorg stack
 ifeq ($(BR2_PACKAGE_MESA3D_OPENGL_GLX),y)

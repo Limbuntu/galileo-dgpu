@@ -126,3 +126,6 @@ BR2_PACKAGE_LIBVDPAU=y
 
 # mpv: VDPAU decode + VDPAU/GPU presentation (ffplay cannot present vdpau frames)
 BR2_PACKAGE_MPV=y
+
+# VA-API (decode without X11; needed for the KMS direct-output path)
+BR2_PACKAGE_LIBVA=y

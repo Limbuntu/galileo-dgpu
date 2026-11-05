@@ -20,10 +20,9 @@ LIBVA_CONF_OPTS = \
 ifeq ($(BR2_PACKAGE_XORG7),y)
 LIBVA_DEPENDENCIES += xlib_libX11 xlib_libXext xlib_libXfixes
 LIBVA_CONF_OPTS += --enable-x11
-ifeq ($(BR2_PACKAGE_HAS_LIBGL),y)
-LIBVA_DEPENDENCIES += libgl
-LIBVA_CONF_OPTS += --enable-glx
-endif
+# GLX support would pull in libgl, which is mesa itself: a build cycle.
+# VA-API decode/presentation through DRM and X11 does not need it.
+LIBVA_CONF_OPTS += --disable-glx
 else
 LIBVA_CONF_OPTS += --disable-glx --disable-x11
 endif

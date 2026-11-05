@@ -1,19 +1,26 @@
 #!/bin/sh
-# KMS direct-out player: stop X, let mpv drive the display through DRM/KMS
-# (no compositor, no X11), then bring the desktop back when mpv quits.
+# KMS direct-out player: stop X, decode with VA-API and drive the display
+# through DRM/KMS (no compositor, no X11), then bring the desktop back.
 # Keys that quit and return to the desktop: Enter / Space / q / Esc.
+#
+# VA-API is used because VDPAU only exists as an X11 API: on a bare VT
+# mpv falls back to software decoding with --hwdec=vdpau.
 FILE="${1:-/root/media/bbb_hw.mp4}"
 [ -f "$FILE" ] || { echo "kms-player: no such file: $FILE" >&2; exit 1; }
+: "${KMS_MPV_ARGS:=--hwdec=vaapi --vaapi-device=/dev/dri/renderD128 --vo=gpu --gpu-context=drm}"
 
 /etc/init.d/S50desktop stop >/dev/null 2>&1
 sleep 2
 
 # openvt switches to VT1 but does not hand the VT over as controlling
 # terminal; without that mpv never sees a keystroke. vtplay does the
-# TIOCSCTTY + stdio wiring, then execs mpv in the foreground.
-openvt -c 1 -s -w -- /usr/bin/vtplay /dev/tty1 /usr/bin/mpv \
-	--hwdec=vdpau --vo=drm --fs --input-conf=/etc/mpv-kms.conf \
-	--osd-level=1 --really-quiet $KMS_MPV_ARGS >/root/kms-player.log 2>&1 "$FILE"
+# TIOCSCTTY for stdin, then execs mpv in the foreground.
+openvt -c 1 -s -w -- /usr/bin/vtplay /dev/tty1 /usr/bin/env \
+	LIBVA_DRIVER_NAME=radeonsi LIBVA_DRIVERS_PATH=/usr/lib/dri \
+	VDPAU_DRIVER=radeonsi /usr/bin/mpv \
+	--fs --input-conf=/etc/mpv-kms.conf --osd-level=1 --really-quiet \
+	--audio-device=alsa/hdmi:CARD=HDMI,DEV=3 --audio-fallback-to-null \
+	$KMS_MPV_ARGS >/root/kms-player.log 2>&1 "$FILE"
 
 /etc/init.d/S50desktop start >/root/s50.log 2>&1
 sleep 5
