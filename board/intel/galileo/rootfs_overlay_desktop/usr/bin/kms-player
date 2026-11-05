@@ -7,7 +7,10 @@
 # mpv falls back to software decoding with --hwdec=vdpau.
 FILE="${1:-/root/media/bbb_hw.mp4}"
 [ -f "$FILE" ] || { echo "kms-player: no such file: $FILE" >&2; exit 1; }
-: "${KMS_MPV_ARGS:=--hwdec=vaapi --vaapi-device=/dev/dri/renderD128 --vo=gpu --gpu-context=drm}"
+: "${KMS_MPV_ARGS:=--hwdec=vaapi --vaapi-device=/dev/dri/renderD128 --vo=gpu --gpu-context=drm --drm-mode=640x480}"
+# 640x480 keeps the dumb-buffer/scanout size close to the 640x360 source:
+# measured mpv CPU ~85% vs ~91% at 800x600 and ~98% at the panel's 1280x1024.
+# The desktop comes back at 1280x1024 because S50desktop re-pins it with xrandr.
 
 /etc/init.d/S50desktop stop >/dev/null 2>&1
 sleep 2
