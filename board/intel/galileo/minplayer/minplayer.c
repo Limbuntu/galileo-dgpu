@@ -523,17 +523,18 @@ int main(int argc, char **argv)
 			if (c->connection == DRM_MODE_CONNECTED && c->count_modes > 0) {
 				drmModeEncoder *e = drmModeGetEncoder(dri_fd, c->encoder_id);
 				if (e) {
-					/* prefer a mode matching the video size, else the smallest */
-					int pick = 0;
+					/* prefer an exact match, else the panel's preferred
+					 * mode, else the largest available mode: rendering into
+					 * a small scanout buffer throws away resolution */
+					int pick = -1, pref = -1, big = 0;
 					for (int j = 0; j < c->count_modes; j++) {
 						if (c->modes[j].hdisplay == video_w &&
-						    c->modes[j].vdisplay == video_h) {
-							pick = j; break;
-						}
-						if (c->modes[j].hdisplay * c->modes[j].vdisplay <
-						    c->modes[pick].hdisplay * c->modes[pick].vdisplay)
-							pick = j;
+						    c->modes[j].vdisplay == video_h) { pick = j; break; }
+						if (c->modes[j].type & DRM_MODE_TYPE_PREFERRED) pref = j;
+						if (c->modes[j].hdisplay * c->modes[j].vdisplay >
+						    c->modes[big].hdisplay * c->modes[big].vdisplay) big = j;
 					}
+					if (pick < 0) pick = (pref >= 0) ? pref : big;
 					memcpy(&g_mode, &c->modes[pick], sizeof g_mode);
 					g_scanout_w = g_mode.hdisplay;
 					g_scanout_h = g_mode.vdisplay;
