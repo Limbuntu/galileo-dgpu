@@ -100,6 +100,13 @@ static int udp_recv_frame(int s, unsigned char *dst, size_t fsz, size_t payload)
 	}
 }
 
+static int flip_done;
+static void flip_handler(int fd, unsigned int frame, unsigned int sec,
+			 unsigned int usec, void *data) {
+	(void)fd; (void)frame; (void)sec; (void)usec;
+	*(int *)data = 1;
+}
+
 static amdgpu_device_handle dev;
 static amdgpu_context_handle ctx;
 static uint64_t va_ib, va_stg[4];
@@ -254,7 +261,13 @@ int main(int argc, char **argv) {
 	if (tty) { fprintf(tty, "loaded %d frames - press any key to return\n", n); fflush(tty); }
 	if (n < 2) { fprintf(stderr, "need at least 2 frames\n"); return 1; }
 
+	/* free the page cache the network stream left behind before playback */
+	{ int c = open("/proc/sys/vm/drop_caches", O_WRONLY); if (c >= 0) { if (write(c, "3", 1) < 0) {} close(c); } }
+
 	if (drmModeSetCrtc(fd, crtc_id, fbs[0], 0, 0, &conn_id, 1, &mode)) perror("setcrtc");
+	drmEventContext evctx; memset(&evctx, 0, sizeof evctx);
+	evctx.version = 2;
+	evctx.page_flip_handler = flip_handler;
 
 	long long period = (long long)(1e9 / fps), start = now_ns();
 	int i = 0, busy = 0;
@@ -264,8 +277,11 @@ int main(int argc, char **argv) {
 		long long d = target - now_ns();
 		if (d > 0) usleep((useconds_t)(d / 1000));
 		else if (d < -period) i += (int)((-d) / period);
-		if (drmModePageFlip(fd, crtc_id, fbs[i % n], 0, NULL) == 0) i++;
-		else { busy++; usleep(2000); }
+		flip_done = 0;
+		if (drmModePageFlip(fd, crtc_id, fbs[i % n], DRM_MODE_PAGE_FLIP_EVENT, &flip_done) == 0) {
+			while (!flip_done) drmHandleEvent(fd, &evctx);   /* wait for vblank */
+			i++;
+		} else { busy++; usleep(2000); }
 	}
 	fprintf(stderr, "played %d flips, %d busy\n", i, busy);
 	return 0;
