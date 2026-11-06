@@ -11,9 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <time.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/mman.h>
@@ -26,6 +28,51 @@
 static long long now_ns(void) {
 	struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t);
 	return (long long)t.tv_sec * 1000000000LL + t.tv_nsec;
+}
+
+static int read_full(int fd, void *buf, size_t n) {
+	size_t off = 0;
+	while (off < n) {
+		ssize_t r = read(fd, (char *)buf + off, n - off);
+		if (r < 0) { if (errno == EINTR) continue; return -1; }
+		if (r == 0) return off ? -2 : 0;
+		off += (size_t)r;
+	}
+	return 1;
+}
+
+/* UDP framed transport: [u32 frame][u32 idx][u32 total][u32 len] + payload */
+static int udp_setup(int port) {
+	int s = socket(AF_INET, SOCK_DGRAM, 0), one = 1, rcv = 1 << 20;
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+	setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv, sizeof rcv);
+	struct timeval tv = { .tv_sec = 0, .tv_usec = 300000 };
+	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+	struct sockaddr_in a; memset(&a, 0, sizeof a);
+	a.sin_family = AF_INET; a.sin_port = htons(port); a.sin_addr.s_addr = INADDR_ANY;
+	if (bind(s, (struct sockaddr *)&a, sizeof a)) { perror("udp bind"); return -1; }
+	return s;
+}
+
+static int udp_recv_frame(int s, unsigned char *dst, size_t fsz, size_t payload) {
+	static unsigned char pkt[2048];
+	uint32_t want = 0xffffffff;
+	uint32_t seen = 0, total = 0;
+	for (;;) {
+		ssize_t r = recv(s, pkt, sizeof pkt, 0);
+		if (r < 0) { if (errno == EAGAIN || errno == EWOULDBLOCK) return -2; if (errno == EINTR) continue; return -1; }
+		if (r < 16) continue;
+		uint32_t *h = (uint32_t *)pkt;
+		uint32_t fr = h[0], idx = h[1], tot = h[2], len = h[3];
+		if (len > (uint32_t)(r - 16) || len > payload) continue;
+		if (want == 0xffffffff) { want = fr; total = tot; seen = 0; }
+		if (fr != want) continue;               /* drop frames we skipped */
+		size_t off = (size_t)idx * payload;
+		if (off + len > fsz) continue;
+		memcpy(dst + off, pkt + 16, len);
+		seen++;
+		if (seen >= total) return 1;
+	}
 }
 
 static amdgpu_device_handle dev;
@@ -86,8 +133,14 @@ int main(int argc, char **argv) {
 	va_ib = 0x900000000ULL;
 	amdgpu_bo_va_op(ibbo, 0, 4096, va_ib, 0, AMDGPU_VA_OP_MAP);
 
-	FILE *f;
-	if (!strncmp(path, "tcp:", 4)) {
+	FILE *f = NULL;
+	int udp_fd = -1;
+	if (!strncmp(path, "udp:", 4)) {
+		udp_fd = udp_setup(atoi(path + 4));
+		if (udp_fd < 0) return 1;
+		fprintf(stderr, "listening on udp/%d\n", atoi(path + 4));
+		if (tty) { fprintf(tty, "waiting for udp stream on port %s...\n", path + 4); fflush(tty); }
+	} else if (!strncmp(path, "tcp:", 4)) {
 		int port = atoi(path + 4);
 		int srv = socket(AF_INET, SOCK_STREAM, 0), one = 1, rcv = 1 << 20;
 		setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
@@ -107,18 +160,23 @@ int main(int argc, char **argv) {
 		if (!f) { perror(path); return 1; }
 	}
 
-	int cap = 4096, n = 0;
+	int cap = 4096, n = 0, skipped = 0;
 	uint32_t *fbs = calloc(cap, sizeof(uint32_t));
 	amdgpu_bo_handle *bos = calloc(cap, sizeof(*bos));
-	unsigned char *frame = malloc(fsz);
 	long long t0 = now_ns();
-	while (n < cap && fread(frame, 1, fsz, f) == fsz) {
+	for (;;) {
+		if (n >= cap) break;
+		int k = n & 3;
+		int rd;
+		if (udp_fd >= 0) {
+			rd = udp_recv_frame(udp_fd, pstg[k], fsz, 1400);
+			if (rd == -2) { skipped++; continue; }   /* incomplete frame: skip it */
+		} else rd = read_full(fileno(f), pstg[k], fsz);
+		if (rd != 1) break;
 		amdgpu_bo_handle bo = bo_alloc(AMDGPU_GEM_DOMAIN_VRAM, fsz, NULL);
 		if (!bo) { perror("vram alloc"); break; }
 		uint64_t va = 0x100000000ULL + (uint64_t)n * 0x200000ULL;
 		if (amdgpu_bo_va_op(bo, 0, fsz, va, 0, AMDGPU_VA_OP_MAP)) { perror("va"); break; }
-		int k = n & 3;
-		memcpy(pstg[k], frame, fsz);
 		uint32_t *ib = (uint32_t *)pib;
 		ib[0] = 1; ib[1] = (uint32_t)fsz; ib[2] = 0;
 		ib[3] = (uint32_t)va_stg[k]; ib[4] = (uint32_t)(va_stg[k] >> 32);
@@ -142,14 +200,18 @@ int main(int argc, char **argv) {
 		bos[n] = bo;
 		n++;
 		if (n % 100 == 0) {
-			FILE *m = fopen("/proc/meminfo", "r"); char k[64]; long v, fr = -1, sw = -1, sh = -1;
-			while (m && fscanf(m, "%63s %ld", k, &v) == 2) {
-				if (!strcmp(k, "MemFree:")) fr = v;
-				if (!strcmp(k, "SwapFree:")) sw = v;
-				if (!strcmp(k, "Shmem:")) sh = v;
+			FILE *m = fopen("/proc/meminfo", "r"); char line[128]; long fr = -1, sw = -1, sh = -1;
+			while (m && fgets(line, sizeof line, m)) {
+				if (!strncmp(line, "MemFree:", 8)) fr = atol(line + 8);
+				else if (!strncmp(line, "SwapFree:", 9)) sw = atol(line + 9);
+				else if (!strncmp(line, "Shmem:", 6)) sh = atol(line + 6);
 			}
 			if (m) fclose(m);
 			fprintf(stderr, "  [%d] memfree=%ldkB swapfree=%ldkB shmem=%ldkB\n", n, fr, sw, sh);
+			if (n % 300 == 0) {
+				int c = open("/proc/sys/vm/drop_caches", O_WRONLY);
+				if (c >= 0) { if (write(c, "1", 1) < 0) {} close(c); }
+			}
 		}
 		if (n % 30 == 0) {
 			fprintf(stderr, "  loaded %d frames...\n", n);
@@ -157,7 +219,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	double ldt = (now_ns() - t0) / 1e9;
-	fprintf(stderr, "loaded %d frames (%.0f MB) in %.1fs\n", n, n * fsz / 1048576.0, ldt);
+	fprintf(stderr, "loaded %d frames (%.0f MB) in %.1fs, skipped %d incomplete\n", n, n * fsz / 1048576.0, ldt, skipped);
 	if (tty) { fprintf(tty, "loaded %d frames - press any key to return\n", n); fflush(tty); }
 	if (n < 2) { fprintf(stderr, "need at least 2 frames\n"); return 1; }
 
