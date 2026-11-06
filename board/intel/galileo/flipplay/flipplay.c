@@ -46,7 +46,7 @@ static int udp_setup(int port) {
 	int s = socket(AF_INET, SOCK_DGRAM, 0), one = 1, rcv = 4 << 20;
 	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
 	setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv, sizeof rcv);
-	struct timeval tv = { .tv_sec = 0, .tv_usec = 300000 };
+	struct timeval tv = { .tv_sec = 0, .tv_usec = 40000 };
 	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
 	struct sockaddr_in a; memset(&a, 0, sizeof a);
 	a.sin_family = AF_INET; a.sin_port = htons(port); a.sin_addr.s_addr = INADDR_ANY;
@@ -54,24 +54,49 @@ static int udp_setup(int port) {
 	return s;
 }
 
+static void udp_send_nack(int s, struct sockaddr_in *to, uint32_t frame,
+			  unsigned char *got, uint32_t total) {
+	unsigned char buf[2048];
+	uint32_t *h = (uint32_t *)buf;
+	h[0] = 0x4b43414e;   /* "NACK" little endian */
+	h[1] = frame;
+	uint32_t cnt = 0;
+	uint16_t *idx = (uint16_t *)(buf + 12);
+	for (uint32_t i = 0; i < total && cnt < 900; i++)
+		if (!got[i]) idx[cnt++] = (uint16_t)i;
+	h[2] = cnt;
+	sendto(s, buf, 12 + cnt * 2, 0, (struct sockaddr *)to, sizeof *to);
+}
+
 static int udp_recv_frame(int s, unsigned char *dst, size_t fsz, size_t payload) {
 	static unsigned char pkt[2048];
-	uint32_t want = 0xffffffff;
-	uint32_t seen = 0, total = 0;
+	static unsigned char got[2048];
+	uint32_t want = 0xffffffff, total = 0, have = 0;
+	struct sockaddr_in from; socklen_t fl = sizeof from;
+	int nacks = 0;
+	memset(&from, 0, sizeof from);
 	for (;;) {
-		ssize_t r = recv(s, pkt, sizeof pkt, 0);
-		if (r < 0) { if (errno == EAGAIN || errno == EWOULDBLOCK) return -2; if (errno == EINTR) continue; return -1; }
+		ssize_t r = recvfrom(s, pkt, sizeof pkt, 0, (struct sockaddr *)&from, &fl);
+		if (r < 0) {
+			if (errno == EINTR) continue;
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				if (want == 0xffffffff) return -2;      /* mid-frame / nothing */
+				if (nacks < 3) { udp_send_nack(s, &from, want, got, total); nacks++; continue; }
+				return -2;                              /* give up on this frame */
+			}
+			return -1;
+		}
 		if (r < 16) continue;
 		uint32_t *h = (uint32_t *)pkt;
 		uint32_t fr = h[0], idx = h[1], tot = h[2], len = h[3];
-		if (len > (uint32_t)(r - 16) || len > payload) continue;
-		if (want == 0xffffffff) { want = fr; total = tot; seen = 0; }
-		if (fr != want) continue;               /* drop frames we skipped */
+		if (len > (uint32_t)(r - 16) || len > payload || tot > 2048) continue;
+		if (want == 0xffffffff) { want = fr; total = tot; have = 0; memset(got, 0, sizeof got); }
+		if (fr != want) continue;
 		size_t off = (size_t)idx * payload;
 		if (off + len > fsz) continue;
+		if (!got[idx]) { got[idx] = 1; have++; }
 		memcpy(dst + off, pkt + 16, len);
-		seen++;
-		if (seen >= total) return 1;
+		if (have >= total) return 1;
 	}
 }
 
