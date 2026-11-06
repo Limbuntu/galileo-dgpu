@@ -1,0 +1,19 @@
+#!/bin/sh
+# Pre-baked streaming player: listen on TCP, receive raw 640x480 RGBA frames,
+# copy them into VRAM with SDMA, then play by vblank-synced page flips.
+# Any key returns to the desktop.
+PORT="${1:-9000}"
+/etc/init.d/S50desktop stop >/dev/null 2>&1
+sleep 2
+openvt -c 1 -s -- true 2>/dev/null
+
+/usr/bin/flipplay tcp:"$PORT" 640 480 0 30 >/root/stream.log 2>&1 &
+P=$!
+/usr/bin/keywait
+kill $P 2>/dev/null
+wait $P 2>/dev/null
+
+/etc/init.d/S50desktop start >/root/s50.log 2>&1
+sleep 5
+[ -x /usr/bin/media-ui ] && setsid env DISPLAY=:0 /usr/bin/media-ui >/dev/null 2>&1 &
+exit 0
