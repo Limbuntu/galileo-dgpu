@@ -238,14 +238,18 @@ int main(int argc, char **argv) {
 		bos[n] = bo;
 		n++;
 		if (n % 100 == 0) {
-			FILE *m = fopen("/proc/meminfo", "r"); char line[128]; long fr = -1, sw = -1, sh = -1;
+			FILE *m = fopen("/proc/meminfo", "r"); char line[128];
+			long fr = -1, ca = -1, sl = -1, pt = -1, sh = -1;
 			while (m && fgets(line, sizeof line, m)) {
 				if (!strncmp(line, "MemFree:", 8)) fr = atol(line + 8);
-				else if (!strncmp(line, "SwapFree:", 9)) sw = atol(line + 9);
+				else if (!strncmp(line, "Cached:", 7)) ca = atol(line + 7);
+				else if (!strncmp(line, "Slab:", 5)) sl = atol(line + 5);
+				else if (!strncmp(line, "PageTables:", 11)) pt = atol(line + 11);
 				else if (!strncmp(line, "Shmem:", 6)) sh = atol(line + 6);
 			}
 			if (m) fclose(m);
-			fprintf(stderr, "  [%d] memfree=%ldkB swapfree=%ldkB shmem=%ldkB\n", n, fr, sw, sh);
+			fprintf(stderr, "  [%d] free=%ldkB cached=%ldkB slab=%ldkB pgtbl=%ldkB shmem=%ldkB\n",
+				n, fr, ca, sl, pt, sh);
 			if (n % 300 == 0) {
 				int c = open("/proc/sys/vm/drop_caches", O_WRONLY);
 				if (c >= 0) { if (write(c, "1", 1) < 0) {} close(c); }
