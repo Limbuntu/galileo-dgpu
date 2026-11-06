@@ -43,7 +43,7 @@ static int read_full(int fd, void *buf, size_t n) {
 
 /* UDP framed transport: [u32 frame][u32 idx][u32 total][u32 len] + payload */
 static int udp_setup(int port) {
-	int s = socket(AF_INET, SOCK_DGRAM, 0), one = 1, rcv = 1 << 20;
+	int s = socket(AF_INET, SOCK_DGRAM, 0), one = 1, rcv = 4 << 20;
 	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
 	setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv, sizeof rcv);
 	struct timeval tv = { .tv_sec = 0, .tv_usec = 300000 };
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 		if (!f) { perror(path); return 1; }
 	}
 
-	int cap = 4096, n = 0, skipped = 0;
+	int cap = 4096, n = 0, skipped = 0, idle = 0;
 	uint32_t *fbs = calloc(cap, sizeof(uint32_t));
 	amdgpu_bo_handle *bos = calloc(cap, sizeof(*bos));
 	long long t0 = now_ns();
@@ -170,7 +170,13 @@ int main(int argc, char **argv) {
 		int rd;
 		if (udp_fd >= 0) {
 			rd = udp_recv_frame(udp_fd, pstg[k], fsz, 1400);
-			if (rd == -2) { skipped++; continue; }   /* incomplete frame: skip it */
+			if (rd == -2) {
+				skipped++; idle++;
+				/* UDP has no EOF: after ~9 s of silence, start playing what we have */
+				if (idle > 30 && n > 1) break;
+				continue;
+			}
+			idle = 0;
 		} else rd = read_full(fileno(f), pstg[k], fsz);
 		if (rd != 1) break;
 		amdgpu_bo_handle bo = bo_alloc(AMDGPU_GEM_DOMAIN_VRAM, fsz, NULL);
