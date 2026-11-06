@@ -81,7 +81,7 @@ static int udp_recv_frame(int s, unsigned char *dst, size_t fsz, size_t payload)
 			if (errno == EINTR) continue;
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				if (want == 0xffffffff) return -2;      /* mid-frame / nothing */
-				if (nacks < 3) { udp_send_nack(s, &from, want, got, total); nacks++; continue; }
+				if (nacks < 12) { udp_send_nack(s, &from, want, got, total); nacks++; continue; }
 				return -2;                              /* give up on this frame */
 			}
 			return -1;

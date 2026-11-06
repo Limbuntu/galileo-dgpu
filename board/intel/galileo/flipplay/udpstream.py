@@ -18,10 +18,14 @@ resent = 0
 
 def pump(until):
     global resent
-    while time.time() < until:
+    first = True
+    while first or time.time() < until:
+        first = False
         try:
             data, addr = s.recvfrom(2048)
         except BlockingIOError:
+            if time.time() >= until:
+                break
             time.sleep(0.002)
             continue
         if len(data) < 12 or data[:4] != b"NACK":
