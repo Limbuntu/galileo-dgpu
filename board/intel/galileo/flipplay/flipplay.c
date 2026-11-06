@@ -100,6 +100,21 @@ static int udp_recv_frame(int s, unsigned char *dst, size_t fsz, size_t payload)
 	}
 }
 
+static void memsnap(const char *tag) {
+	FILE *m = fopen("/proc/meminfo", "r"); char line[128];
+	long fr = -1, ca = -1, sl = -1, pt = -1, sh = -1;
+	while (m && fgets(line, sizeof line, m)) {
+		if (!strncmp(line, "MemFree:", 8)) fr = atol(line + 8);
+		else if (!strncmp(line, "Cached:", 7)) ca = atol(line + 7);
+		else if (!strncmp(line, "Slab:", 5)) sl = atol(line + 5);
+		else if (!strncmp(line, "PageTables:", 11)) pt = atol(line + 11);
+		else if (!strncmp(line, "Shmem:", 6)) sh = atol(line + 6);
+	}
+	if (m) fclose(m);
+	fprintf(stderr, "  <%s> free=%ld cached=%ld slab=%ld pgtbl=%ld shmem=%ld\n", tag, fr, ca, sl, pt, sh);
+	fflush(stderr);
+}
+
 static int flip_done;
 static void flip_handler(int fd, unsigned int frame, unsigned int sec,
 			 unsigned int usec, void *data) {
@@ -268,7 +283,9 @@ int main(int argc, char **argv) {
 	/* free the page cache the network stream left behind before playback */
 	{ int c = open("/proc/sys/vm/drop_caches", O_WRONLY); if (c >= 0) { if (write(c, "3", 1) < 0) {} close(c); } }
 
+	memsnap("before setcrtc");
 	if (drmModeSetCrtc(fd, crtc_id, fbs[0], 0, 0, &conn_id, 1, &mode)) perror("setcrtc");
+	memsnap("after setcrtc");
 	drmEventContext evctx; memset(&evctx, 0, sizeof evctx);
 	evctx.version = 2;
 	evctx.page_flip_handler = flip_handler;
@@ -285,6 +302,9 @@ int main(int argc, char **argv) {
 		if (drmModePageFlip(fd, crtc_id, fbs[i % n], DRM_MODE_PAGE_FLIP_EVENT, &flip_done) == 0) {
 			while (!flip_done) drmHandleEvent(fd, &evctx);   /* wait for vblank */
 			i++;
+			if (i == 1) memsnap("after flip 1");
+			else if (i == 10) memsnap("after flip 10");
+			else if (i == 60) memsnap("after flip 60");
 		} else { busy++; usleep(2000); }
 	}
 	fprintf(stderr, "played %d flips, %d busy\n", i, busy);

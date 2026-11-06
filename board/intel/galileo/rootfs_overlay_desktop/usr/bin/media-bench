@@ -1,0 +1,56 @@
+#!/bin/sh
+# Measure the CPU cost of each media-console item on the real board.
+OUT=/root/media-bench.txt
+: > "$OUT"
+say() { echo "$*" | tee -a "$OUT"; }
+
+cpu_of() { # pid, seconds
+	P=$1; S=${2:-5}
+	a=$(awk '/^cpu /{print $2+$3+$4+$7+$8}' /proc/stat)
+	u1=$(awk '{print $14+$15}' /proc/$P/stat 2>/dev/null || echo 0)
+	sleep $S
+	b=$(awk '/^cpu /{print $2+$3+$4+$7+$8}' /proc/stat)
+	u2=$(awk '{print $14+$15}' /proc/$P/stat 2>/dev/null || echo 0)
+	echo "$(( (u2-u1)*100/(S*100) ))"
+}
+
+say "Galileo Gen 2 (Quark 400MHz) + RX 580 - media paths"
+say "date: $(date)"
+say "---------------------------------------------------------------"
+
+# --- items 3/4/5 need X ---
+startx() { ps | grep -q "[X]org" || { /etc/init.d/S50desktop start >/dev/null 2>&1; sleep 18; }; }
+stopx()  { /etc/init.d/S50desktop stop >/dev/null 2>&1; killall -9 Xorg openbox lxpanel pcmanfm xterm 2>/dev/null; sleep 3; }
+
+startx
+M=/root/media
+for spec in "3|$M/bbb_vcd.mpg|ffplay -autoexit -x 512 -y 384" \
+            "4|$M/bbb_light.mpg|ffplay -autoexit -x 512 -y 384" \
+            "5|$M/bbb_hw.mp4|mpv --no-config --hwdec=vdpau --vo=vdpau --geometry=640x360"; do
+	n=${spec%%|*}; rest=${spec#*|}; f=${rest%%|*}; cmd=${rest#*|}
+	DISPLAY=:0 VDPAU_DRIVER=radeonsi sh -c "$cmd '$f'" >/dev/null 2>&1 &
+	P=$!; sleep 8
+	printf "%s) %-28s cpu=%s%%\n" "$n" "$(basename $f)" "$(cpu_of $P 5)" | tee -a "$OUT"
+	kill -9 $P 2>/dev/null; sleep 1
+done
+
+stopx
+# --- item 6: KMS direct (mpv vo=drm) ---
+KMS_MPV_ARGS="--ao=null" /usr/bin/kms-player "$M/bbb_hw.mp4" >/dev/null 2>&1 &
+sleep 18
+P=$(for d in /proc/[0-9]*; do [ "$(cat $d/comm 2>/dev/null)" = mpv ] && echo ${d#/proc/}; done | head -1)
+[ -n "$P" ] && printf "6) %-28s cpu=%s%% (vo=drm, VA-API)\n" "bbb_hw.mp4" "$(cpu_of $P 5)" | tee -a "$OUT"
+for p in $(for d in /proc/[0-9]*; do [ "$(cat $d/comm 2>/dev/null)" = mpv ] && echo ${d#/proc/}; done); do kill -9 $p; done
+sleep 22
+
+# --- item 7: pre-baked flip (240 frames) ---
+/usr/bin/flipplay /root/media/bbb_raw.rgb 640 480 0 30 >/dev/null 2>&1 &
+sleep 20
+P=$(for d in /proc/[0-9]*; do [ "$(cat $d/comm 2>/dev/null)" = flipplay ] && echo ${d#/proc/}; done | head -1)
+[ -n "$P" ] && printf "7) %-28s cpu=%s%% (page flip, SDMA)\n" "240 frames / 8s" "$(cpu_of $P 5)" | tee -a "$OUT"
+for p in $(for d in /proc/[0-9]*; do [ "$(cat $d/comm 2>/dev/null)" = flipplay ] && echo ${d#/proc/}; done); do kill -9 $p; done
+sleep 1
+
+say "---------------------------------------------------------------"
+say "8) TCP stream 1 min: see /root/flip.log (loaded 1802 frames)"
+say "done. press any key on the console to return."
