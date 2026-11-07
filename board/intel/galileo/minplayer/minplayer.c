@@ -748,8 +748,11 @@ int main(int argc, char **argv)
 		next_fb = (next_fb + 1) % n_fbs;
 		av_frame_unref(frame);   /* release the hw surface back to the pool */
 
-		/* --- pacing to the video fps (by frame index, not pts) --- */
-		if (run_seconds > 0) {
+		/* --- pacing to the video fps (by frame index, not pts).
+		 * This must run even when run_seconds==0 (play to EOF), otherwise
+		 * the loop flips faster than the GPU renders and the screen shows
+		 * whatever garbage the scanout buffer happens to contain. --- */
+		{
 			AVRational fr = fmt->streams[vs]->avg_frame_rate;
 			double fps = (fr.num > 0 && fr.den > 0) ?
 				     (double)fr.num / fr.den : 30.0;
