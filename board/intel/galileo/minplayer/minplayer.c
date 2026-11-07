@@ -161,6 +161,7 @@ DECL_GL(void, glBufferData, (GLenum target, GLsizeiptr size,
 DECL_GL(void, glDeleteBuffers, (GLsizei n, const GLuint *buffers))
 DECL_GL(void, glClear, (GLbitfield mask))
 DECL_GL(void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
+DECL_GL(void, glReadPixels, (GLint x, GLint y, GLsizei w, GLsizei h, GLenum fmt, GLenum type, void *px))
 DECL_GL(void, glActiveTexture, (GLenum texture))
 DECL_GL(void, glTexParameteri, (GLenum target, GLenum pname, GLint param))
 DECL_GL(void, glGenFramebuffers, (GLsizei n, GLuint *framebuffers))
@@ -373,6 +374,7 @@ const EGLint cfg_attrs[] = {
 
 	GET_GL(glEGLImageTargetTexture2DOES);
 	GET_GL(glDrawArrays);
+	GET_GL(glReadPixels);
 	GET_GL(glUseProgram);
 	GET_GL(glVertexAttribPointer);
 	GET_GL(glEnableVertexAttribArray);
@@ -726,6 +728,26 @@ int main(int argc, char **argv)
 			int vb = (g_scanout_h - video_h) / 2;
 			glViewport(0, vb > 0 ? vb : 0, g_scanout_w, video_h);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
+			{
+				const char *dump = getenv("MINPLAYER_DUMP");
+				if (dump && frames_presented == 5 && glReadPixels) {
+					int dw = 320, dh = 180;
+					int dx = (g_scanout_w - dw) / 2, dy = (g_scanout_h - dh) / 2;
+					unsigned char *px = malloc((size_t)dw * dh * 4);
+					if (px) {
+						glReadPixels(dx, dy, dw, dh, 0x1908 /*RGBA*/, 0x1401 /*UNSIGNED_BYTE*/, px);
+						FILE *pf = fopen(dump, "wb");
+						if (pf) {
+							fprintf(pf, "P6\n%d %d\n255\n", dw, dh);
+							for (int q = 0; q < dw * dh; q++) {
+								fputc(px[q*4], pf); fputc(px[q*4+1], pf); fputc(px[q*4+2], pf);
+							}
+							fclose(pf);
+						}
+						free(px);
+					}
+				}
+			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
