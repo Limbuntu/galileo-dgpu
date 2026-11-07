@@ -161,6 +161,8 @@ DECL_GL(void, glBufferData, (GLenum target, GLsizeiptr size,
 DECL_GL(void, glDeleteBuffers, (GLsizei n, const GLuint *buffers))
 DECL_GL(void, glClear, (GLbitfield mask))
 DECL_GL(void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
+DECL_GL(void, glFlush, (void))
+DECL_GL(const unsigned char *, glGetString, (unsigned int name))
 DECL_GL(void, glReadPixels, (GLint x, GLint y, GLsizei w, GLsizei h, GLenum fmt, GLenum type, void *px))
 DECL_GL(void, glActiveTexture, (GLenum texture))
 DECL_GL(void, glTexParameteri, (GLenum target, GLenum pname, GLint param))
@@ -259,6 +261,8 @@ static int init_gl(void)
 		fprintf(stderr, "link: %s\n", log);
 		return -1;
 	}
+	if (glGetString)
+		fprintf(stderr, "GL_RENDERER: %s\n", (const char *)glGetString(0x1F01));
 	glUseProgram(gl_program);
 	gl_loc_tex_y = glGetUniformLocation(gl_program, "tex_y");
 	gl_loc_tex_uv = glGetUniformLocation(gl_program, "tex_uv");
@@ -374,6 +378,8 @@ const EGLint cfg_attrs[] = {
 	GET_GL(glEGLImageTargetTexture2DOES);
 	GET_GL(glDrawArrays);
 	GET_GL(glReadPixels);
+	GET_GL(glGetString);
+	GET_GL(glFlush);
 	GET_GL(glUseProgram);
 	GET_GL(glVertexAttribPointer);
 	GET_GL(glEnableVertexAttribArray);
@@ -734,10 +740,14 @@ int main(int argc, char **argv)
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, g_cache[ci].tex_uv);
 
+			long long rt0 = now_ns();
 			glBindFramebuffer(GL_FRAMEBUFFER, fbs[next_fb].fbo);
 			int vb = (g_scanout_h - video_h) / 2;
 			glViewport(0, vb > 0 ? vb : 0, g_scanout_w, video_h);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
+			if (glFlush) glFlush();   /* without this Mesa batches draws and the
+						    * GPU renders in bursts while the CPU
+						    * already flips at 30 fps */
 			{
 				const char *dump = getenv("MINPLAYER_DUMP");
 				if (dump && frames_presented == 5 && glReadPixels) {
@@ -759,6 +769,8 @@ int main(int argc, char **argv)
 				}
 			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			if (frames_presented % 30 == 0)
+				fprintf(stderr, "  render %.1f ms\n", (now_ns() - rt0) / 1e6);
 		}
 
 		/* --- present: at most one flip in flight (kernel queue depth 1) ---

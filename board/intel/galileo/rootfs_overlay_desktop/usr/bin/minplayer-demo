@@ -2,7 +2,7 @@
 # UVD zero-copy player (VA-API -> dmabuf -> EGL -> GBM -> PageFlip).
 # Mirrors /root/run_minplayer.sh, which is the configuration verified on the
 # board: a finite duration (pacing active) and X fully stopped first.
-FILE="${1:-/root/media/bbb_full_1080p60.mp4}"
+FILE="${1:-/root/media/bbb_hw.mp4}"
 SECS="${2:-640}"
 [ -f "$FILE" ] || { echo "minplayer-demo: missing $FILE" >&2; exit 1; }
 [ -x /usr/bin/minplayer ] || { echo "minplayer-demo: no /usr/bin/minplayer" >&2; exit 1; }
