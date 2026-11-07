@@ -14,9 +14,13 @@ sleep 4
 export LIBVA_DRIVER_NAME=radeonsi LIBVA_DRIVERS_PATH=/usr/lib/dri
 /usr/bin/minplayer "$FILE" /root/minplayer-result.txt "$SECS" >/root/minplayer-demo.log 2>&1 &
 P=$!
-/usr/bin/keywait
+/usr/bin/keywait &
+K=$!
+# return to the desktop when EITHER the video ends or a key is pressed
+while kill -0 $P 2>/dev/null && kill -0 $K 2>/dev/null; do sleep 1; done
 kill $P 2>/dev/null
-wait $P 2>/dev/null
+kill $K 2>/dev/null
+wait 2>/dev/null
 
 /etc/init.d/S50desktop start >/root/s50.log 2>&1
 sleep 5
