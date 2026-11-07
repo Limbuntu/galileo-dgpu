@@ -211,7 +211,7 @@ static const char *vert_src =
 	"}\n";
 
 static const char *frag_src =
-	"precision mediump float;\n"
+""
 	"uniform sampler2D tex_y;\n"
 	"uniform sampler2D tex_uv;\n"
 	"varying vec2 vuv;\n"
@@ -328,8 +328,8 @@ static int init_gbm_egl(int dri_fd)
 	}
 	fprintf(stderr, "EGL %s\n", eglQueryString(egl_dpy, EGL_VERSION));
 
-	if (!eglBindAPI(EGL_OPENGL_ES_API)) {
-		fprintf(stderr, "eglBindAPI(ES) failed\n");
+	if (!eglBindAPI(EGL_OPENGL_API)) {
+		fprintf(stderr, "eglBindAPI(GL) failed\n");
 		return -1;
 	}
 
