@@ -52,8 +52,6 @@ while :; do
 	6) stop_all; setsid /usr/bin/kms-player "$V3" >/dev/null 2>&1 & NOW="KMS direct mode (Enter/Space returns to desktop)" ;;
 	7) stop_all; setsid /usr/bin/flip-demo >/dev/null 2>&1 & NOW="flip mode: frames already in VRAM" ;;
 	8) stop_all; setsid /usr/bin/stream-demo 9000 >/dev/null 2>&1 & NOW="streaming: waiting on tcp/9000 (any key returns)" ;;
-	9) stop_all; setsid /usr/bin/minplayer-demo >/dev/null 2>&1 & NOW="1080p60 UVD zero-copy (any key returns)" ;;
-	10) stop_all; setsid /usr/bin/minplayer-demo /root/media/bbb_4k30_30s.mp4 >/dev/null 2>&1 & NOW="4K30 UVD zero-copy (any key returns)" ;;
 	s) stop_all; NOW="stopped" ;;
 	a) audio-out usb >/dev/null 2>&1; NOW="audio out -> usb" ;;
 	r) : ;;

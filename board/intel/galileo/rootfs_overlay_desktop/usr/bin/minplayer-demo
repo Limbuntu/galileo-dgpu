@@ -1,16 +1,18 @@
 #!/bin/sh
 # UVD zero-copy player (VA-API -> dmabuf -> EGL -> GBM -> PageFlip).
-# Any key returns to the desktop.
+# Mirrors /root/run_minplayer.sh, which is the configuration verified on the
+# board: a finite duration (pacing active) and X fully stopped first.
 FILE="${1:-/root/media/bbb_full_1080p60.mp4}"
+SECS="${2:-640}"
 [ -f "$FILE" ] || { echo "minplayer-demo: missing $FILE" >&2; exit 1; }
 [ -x /usr/bin/minplayer ] || { echo "minplayer-demo: no /usr/bin/minplayer" >&2; exit 1; }
 
 /etc/init.d/S50desktop stop >/dev/null 2>&1
-sleep 2
-openvt -c 1 -s -- true 2>/dev/null
+killall -9 Xorg openbox lxpanel pcmanfm xterm 2>/dev/null
+sleep 4
 
 export LIBVA_DRIVER_NAME=radeonsi LIBVA_DRIVERS_PATH=/usr/lib/dri
-/usr/bin/minplayer "$FILE" /root/minplayer-result.txt 0 >/root/minplayer-demo.log 2>&1 &
+/usr/bin/minplayer "$FILE" /root/minplayer-result.txt "$SECS" >/root/minplayer-demo.log 2>&1 &
 P=$!
 /usr/bin/keywait
 kill $P 2>/dev/null
