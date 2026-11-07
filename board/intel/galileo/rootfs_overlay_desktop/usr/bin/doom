@@ -3,7 +3,12 @@
 killall Xorg openbox xterm 2>/dev/null
 sleep 2
 cd /root/doom
+# 320x200 framebuffer => doomgeneric picks scale 1 and only writes 256 KB per
+# frame instead of 1 MB (uncached fb writes are ~12 MB/s on this CPU)
+OLD_MODE=$(fbset -s 2>/dev/null | sed -n 's/^mode "\(.*\)"/\1/p' | head -1)
+fbset -g 320 200 320 200 32 2>/dev/null
 ./doomgeneric -iwad freedoom1.wad
+[ -n "$OLD_MODE" ] && fbset "$OLD_MODE" 2>/dev/null
 # Doom exited: bring the desktop back
 rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
 /usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
