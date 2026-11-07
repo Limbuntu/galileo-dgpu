@@ -94,12 +94,14 @@ static int die(const char *what)
 }
 
 static volatile int flip_pending;
+static volatile int flips_done;
 
 static void flip_handler(int fd, unsigned int frame, unsigned int sec,
 			 unsigned int usec, void *data)
 {
 	(void)fd; (void)frame; (void)sec; (void)usec;
 	flip_pending = 0;
+	flips_done++;
 }
 
 /* --------------------------------------------------------------- GLES2 */
@@ -723,15 +725,17 @@ int main(int argc, char **argv)
 			glDeleteFramebuffers(1, &fb);
 		}
 
-		/* --- present --- */
+		/* --- present: at most one flip in flight (kernel queue depth 1) ---
+		 * The render for the *next* frame already happened above while this
+		 * one was being displayed, so the wait below usually returns at once. */
+		while (frames_presented - flips_done >= 1) {
+			long long w0 = now_ns();
+			drmHandleEvent(dri_fd, &evctx);
+			if (now_ns() - w0 > 500000000LL) { fprintf(stderr, "flip wait timeout\n"); break; }
+		}
 		flip_pending = 1;
 		if (drmModePageFlip(dri_fd, g_crtc_id, fbs[next_fb].fb,
 				    DRM_MODE_PAGE_FLIP_EVENT, NULL) == 0) {
-			/* wait for vblank with a 500 ms timeout so a stuck flip
-			 * can't hang the player */
-			long long flip_t0 = now_ns();
-			while (flip_pending && now_ns() - flip_t0 < 500000000LL)
-				drmHandleEvent(dri_fd, &evctx);
 			frames_presented++;
 		} else {
 			fprintf(stderr, "drmModePageFlip failed: %s\n", strerror(errno));
