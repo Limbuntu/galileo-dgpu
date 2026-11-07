@@ -742,8 +742,17 @@ int main(int argc, char **argv)
 
 			long long rt0 = now_ns();
 			glBindFramebuffer(GL_FRAMEBUFFER, fbs[next_fb].fbo);
-			int vb = (g_scanout_h - video_h) / 2;
-			glViewport(0, vb > 0 ? vb : 0, g_scanout_w, video_h);
+			/* aspect-fit: scale to the largest size that fits both
+			 * dimensions (4K into a 2560x1440 panel must shrink, not
+			 * be stretched or clipped) */
+			double sx = (double)g_scanout_w / video_w;
+			double sy = (double)g_scanout_h / video_h;
+			double sc = sx < sy ? sx : sy;
+			int dw = (int)(video_w * sc + 0.5);
+			int dh = (int)(video_h * sc + 0.5);
+			int x0 = (g_scanout_w - dw) / 2;
+			int y0 = (g_scanout_h - dh) / 2;
+			glViewport(x0, y0, dw, dh);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 			if (glFlush) glFlush();   /* without this Mesa batches draws and the
 						    * GPU renders in bursts while the CPU
