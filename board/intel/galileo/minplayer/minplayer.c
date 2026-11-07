@@ -292,6 +292,7 @@ static struct fbdev {
 	uint32_t fb;
 	EGLImage img;   /* XRGB8888 image of the scanout BO */
 	GLuint tex;     /* texture wrapped around that image (FBO target) */
+	GLuint fbo;     /* framebuffer object rendering into tex */
 } fbs[3];
 static int n_fbs;
 
@@ -445,6 +446,11 @@ static int make_scanout(int k, int w, int h)
 	glGenTextures(1, &fbs[k].tex);
 	glBindTexture(GL_TEXTURE_2D, fbs[k].tex);
 	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES_dat)fbs[k].img);
+	glGenFramebuffers(1, &fbs[k].fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbs[k].fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			       GL_TEXTURE_2D, fbs[k].tex, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	uint32_t handle = gbm_bo_get_handle(fbs[k].bo).u32;
 	uint32_t pitch = gbm_bo_get_stride(fbs[k].bo);
 	uint32_t handles[4] = { handle, 0, 0, 0 };
@@ -501,6 +507,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	int vs = av_find_best_stream(fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+	if (vs >= 0)
+		for (unsigned i = 0; i < fmt->nb_streams; i++)
+			if ((int)i != vs) fmt->streams[i]->discard = AVDISCARD_ALL;
 	if (vs < 0) { fprintf(stderr, "no video stream\n"); return 1; }
 	AVCodecParameters *par = fmt->streams[vs]->codecpar;
 	AVCodec *dec = avcodec_find_decoder(par->codec_id);
@@ -713,16 +722,11 @@ int main(int argc, char **argv)
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, g_cache[ci].tex_uv);
 
-			GLuint fb = 0;
-			glGenFramebuffers(1, &fb);
-			glBindFramebuffer(GL_FRAMEBUFFER, fb);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-					       GL_TEXTURE_2D, fbs[next_fb].tex, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, fbs[next_fb].fbo);
 			int vb = (g_scanout_h - video_h) / 2;
 			glViewport(0, vb > 0 ? vb : 0, g_scanout_w, video_h);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDeleteFramebuffers(1, &fb);
 		}
 
 		/* --- present: at most one flip in flight (kernel queue depth 1) ---
