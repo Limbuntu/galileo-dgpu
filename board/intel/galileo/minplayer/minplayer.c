@@ -207,7 +207,6 @@ static const char *vert_src =
 	"varying vec2 vuv;\n"
 	"void main(void) {\n"
 	"  vuv = pos * 0.5 + 0.5;\n"
-	"  vuv.y = 1.0 - vuv.y;\n"
 	"  gl_Position = vec4(pos, 0.0, 1.0);\n"
 	"}\n";
 
@@ -708,8 +707,19 @@ int main(int argc, char **argv)
 			glGenTextures(1, &ty); glGenTextures(1, &tuv);
 			glBindTexture(GL_TEXTURE_2D, ty);
 			glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES_dat)img_y);
+			/* EGLImage textures have no mipmaps: the default MIN filter is
+			 * mipmap-based, which makes the texture incomplete and every
+			 * sample returns 0 (= green after YUV->RGB). */
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, 0x2802 /*WRAP_S*/, 0x812F /*CLAMP_TO_EDGE*/);
+			glTexParameteri(GL_TEXTURE_2D, 0x2803 /*WRAP_T*/, 0x812F);
 			glBindTexture(GL_TEXTURE_2D, tuv);
 			glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES_dat)img_uv);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, 0x2802, 0x812F);
+			glTexParameteri(GL_TEXTURE_2D, 0x2803, 0x812F);
 			ci = g_cache_n++;
 			g_cache[ci].id = surf; g_cache[ci].y = img_y; g_cache[ci].uv = img_uv;
 			g_cache[ci].tex_y = ty; g_cache[ci].tex_uv = tuv;
