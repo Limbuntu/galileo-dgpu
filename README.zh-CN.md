@@ -2,6 +2,8 @@
 
 [English README](README.md)
 
+[![Galileo Gen 2 驱动独立显卡](docs/galileo/hero.jpg)](docs/galileo/hero.jpg)
+
 把一块 Intel Galileo Gen 2(Quark X1000,400MHz i586,256MB 内存,无 SSE2/PAE/CMOV)
 重制为一台功能齐全的 Linux 电脑:LXDE 桌面、GPU 加速、4K 视频硬解、浏览器——
 由三张候选独显中的任意一张驱动显示。
@@ -18,6 +20,16 @@ GitHub CI 构建 `desktop` 与 `workstation`;`buildserver`(Gitea,私有)保留�
 | `galileo_workstation` | 全功能 Linux:desktop + NetSurf + OpenTTD/Minetest + 跑分工具 + radeonsi | 3000M |
 
 `galileo_terminal` / `galileo_browser` / `galileo_nvidia` 三个 defconfig 只作参考保留,不再构建。
+
+## 硬件
+
+| 板子架在独显上 | 背面 |
+|---|---|
+| ![Galileo Gen 2 装在独显上](docs/galileo/board-with-radeon.jpg) | ![板子背面](docs/galileo/board-back.jpg) |
+| **板子 + 显卡 + 电源** | **整套工作台** |
+| ![板子、显卡与电源](docs/galileo/rig-front.jpg) | ![显示器、显卡与电源](docs/galileo/rig-desk.jpg) |
+
+![板子上的桌面会话](docs/galileo/desktop.jpg)
 
 ## 4K 视频(A 卡,VA-API/UVD)
 

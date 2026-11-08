@@ -2,6 +2,8 @@
 
 [中文文档](README.zh-CN.md)
 
+[![Galileo Gen 2 driving a discrete GPU](docs/galileo/hero.jpg)](docs/galileo/hero.jpg)
+
 Reviving an Intel Galileo Gen 2 (Quark X1000, 400 MHz i586, 256 MB RAM, no SSE2/PAE/CMOV)
 as a fully usable Linux computer: LXDE desktop, GPU acceleration, 4K video decode,
 and a browser — with any one of three discrete GPUs driving the display.
@@ -27,6 +29,16 @@ Two remotes, two histories. `buildserver` (Gitea, private) keeps the full tree;
 `github` gets a filtered export through `tools/push-github.sh` — no third-party
 media, no old images, no vendor CI, and board addresses/passwords replaced by
 placeholders. The GitHub matrix builds `desktop` and `workstation`.
+
+## Hardware
+
+| Board on the GPU | Back side |
+|---|---|
+| ![Galileo Gen 2 mounted on a discrete GPU](docs/galileo/board-with-radeon.jpg) | ![Back of the board](docs/galileo/board-back.jpg) |
+| **Board, card and power supply** | **The whole bench** |
+| ![Board on the GPU with the PSU](docs/galileo/rig-front.jpg) | ![Desk with monitor, GPU and PSU](docs/galileo/rig-desk.jpg) |
+
+![Desktop session on the board](docs/galileo/desktop.jpg)
 
 ## 4K video (A card, VA-API/UVD)
 
