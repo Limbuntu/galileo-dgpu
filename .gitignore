@@ -10,8 +10,13 @@ __pycache__/
 board/intel/galileo/rootfs_overlay_v3/root/doom/.savegame/
 images/
 
-# Game data is fetched, never committed (multi-GB, third-party media):
-#   tools/fetch-dosgames.sh stages it into the overlay before a build.
+# Game data is never committed (multi-GB, third-party media): it is staged into
+# this directory on the build host and reaches the CI runner through the
+# galileo-games volume (tools/push-dosgames.sh).
 board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames/
-!board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames/.gitkeep
+board/intel/galileo/dosgames-assets/
 tmp/games/
+# runtime log written by the board
+board/intel/galileo/rootfs_overlay_desktop/root/doom/doom.log
+# screen recordings / demo clips live outside the tree
+assets/
