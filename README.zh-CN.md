@@ -26,7 +26,7 @@ GitHub CI 构建 `desktop` 与 `workstation`;`buildserver`(Gitea,私有)保留�
 | 主板和两张显卡 | 背面 |
 |---|---|
 | ![主板和两张显卡](docs/galileo/board-with-radeon.jpg) | ![板子背面](docs/galileo/board-back.jpg) |
-| **主板、显卡与电源** | **整套工作台** |
+| <p align="center"><b>主板、显卡与电源</b></p> | <p align="center"><b>整套工作台</b></p> |
 | ![主板、显卡与电源](docs/galileo/rig-front.jpg) | ![显示器、显卡与电源](docs/galileo/rig-desk.jpg) |
 
 ![板子上的桌面会话](docs/galileo/desktop.jpg)
