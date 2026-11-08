@@ -80,9 +80,9 @@ Total real time: 306.63 seconds (5 minutes 7 seconds)
 
 ### 5.1 前置条件
 
-1. 板子接电、接网线(或用串口),确认能 `ping` 通;默认 SSH `root@<board-ip>`,密码 `<board-password>`。
+1. 板子接电、接网线(或用串口),确认能 `ping` 通;默认 SSH `root@<board-ip>`,密码见内部记录(本仓库不保存)。
 2. 记录环境:`uname -a`、`free -m`、`cat /proc/cpuinfo | head -20`、`uptime`。
-3. **清空负载**:关掉浏览器、Minetest、Minecraft 等;`ps w` 确认没有大进程。后台任务会让 7-Zip 掉到 54 MIPS(见上表),这是最常见的"跑分异常"。
+3. **清空负载**:关掉浏览器、Minetest、OpenTTD 等;`ps w` 确认没有大进程。后台任务会让 7-Zip 掉到 54 MIPS(见上表),这是最常见的"跑分异常"。
 4. 板上 `scp` 是坏的(dropbear),传文件用管道:`cat 文件 | ssh root@<ip> "cat > /目标路径"`。
 
 ### 5.2 一键跑分(推荐)

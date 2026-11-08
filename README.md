@@ -13,8 +13,8 @@ Three images. One defconfig, one overlay layer, standard names.
 | defconfig | Image | Contents | Rootfs |
 |---|---|---|---|
 | `galileo_desktop` | desktop | X + openbox + xterm + pcmanfm, software 2D only | 800M |
-| `galileo_workstation` | workstation | desktop + NetSurf + Minecraft/OpenTTD/Doom/OpenArena + glmark2/gtkperf/mesa-demos | 3000M |
-| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + 8 DOS games + console menu | 3600M |
+| `galileo_workstation` | workstation | desktop + NetSurf + OpenTTD/Doom/OpenArena + glmark2/gtkperf/mesa-demos | 3000M |
+| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + 15 DOS game entries + console menu | 3600M |
 
 Naming convention — do not invent new suffixes:
 
@@ -37,29 +37,15 @@ tty1: `q` drops to a shell and `exit` brings the menu back.
 
 | key | Game | Notes |
 |---|---|---|
-| `pal95` | 仙剑奇侠传 95 | runs `PAL.EXE` |
-| `civ1` | 文明 1 | boots from two floppy images |
-| `nfs` | 极品飞车 SE | `NFSSE/NFS.EXE` |
-| `sc2000` | 模拟城市 2000 | `C_SC2000/SC2000.EXE` |
-| `sgz5` | 三国志 V PK | mounts `san5.cue` (data ISO + 20 MP3 CDDA tracks) as D: |
 | `doom` | Doom (Freedoom) | `DOOM.BAT` |
-| `ra1` | 红色警戒 1 | DOS v1.04: `RA.EXE` + `GAME.DAT` + `MAIN.MIX`/`REDALERT.MIX` |
-| `war2` | 魔兽争霸 II：黑潮 | DOS v1.50: `WAR2.EXE` + CD-side `DATA/` |
+| `nfs1` `gta` `tomb` `quake` `duke3d` `dune2` `pop` `wolf3d` `homm2` `xys2` `jinyong` `uw2` `msfs5` `war2x` | archive games | one directory each, mounted as `C:`; the entries are listed in the `case` in `dosgame` |
 
-Two games insist on seeing their disc, so their directory is mounted twice —
-`C:` as the game drive and `D:` as a CD-ROM with an explicit volume label:
-
-```
-dosbox -conf ~/.dosbox/dosbox-0.74.conf \
-       -c "mount c /usr/share/dosgames/RA1" \
-       -c "mount d /usr/share/dosgames/RA1 -t cdrom -label CD1" \
-       -c "c:" -c "RA.EXE"
-```
-
-Red Alert's runtime config lives in `RA1/REDALERT.INI` (`[Sound] Card=13` = SB16,
-`Port=220h/IRQ=7/DMA=1`). Warcraft II uses `WAR2.INI` (`cdpath=d:\`, `cdaudio=0`)
-plus the Miles driver maps under `WAR2/DRIVERS/`. Game data is 880 MB in total,
-hence the 3600M ext2/partition size.
+The game data itself is not in git — it is multi-GB third-party media. It is
+staged into `usr/share/dosgames/` on the build host and reaches the CI runner
+through the `galileo-games` volume (`tools/push-dosgames.sh`); the build copies
+the volume into the overlay. A key whose directory is missing exits at once with
+`dosgame: <key>: <file> not found`, so an image built without the volume still
+boots to the menu. That is why the partition is 3600M.
 
 ## System Stack
 
@@ -119,7 +105,7 @@ payload); the SPI write and boot still need hardware validation. See
 
 ## Board Quick Reference
 
-- SSH: `root@<board-ip>`, password `<board-password>`
+- SSH: `root@<board-ip>`, password in the internal record (not in this repo)
 - scp is broken (dropbear): pipe files via `cat file | ssh ... "cat > /dest"`
 - busybox tar has no combined flags: `zcat f.tgz | tar -x -f - -C /`
 - No RTC battery: `S46timesync` syncs clock from HTTP Date headers at boot

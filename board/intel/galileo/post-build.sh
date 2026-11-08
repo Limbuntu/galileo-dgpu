@@ -20,12 +20,3 @@ rm -f ${TARGET_DIR}/etc/init.d/S40xorg
 if [ -d "${STAGING_DIR}/usr/lib/gconv" ] && [ ! -d "${TARGET_DIR}/usr/lib/gconv" ]; then
     cp -a "${STAGING_DIR}/usr/lib/gconv" "${TARGET_DIR}/usr/lib/"
 fi
-
-# Red Alert 1 MAIN.MIX is 434 MB -- above GitHub's 100 MB per-file limit, so the
-# repo carries it as 90 MB parts and it is reassembled here.
-ASSETS="$(cd "$(dirname "$0")" && pwd)/dosgames-assets"
-if [ -d "${ASSETS}/RA1" ]; then
-    mkdir -p "${TARGET_DIR}/usr/share/dosgames/RA1"
-    cat "${ASSETS}/RA1/MAIN.MIX.part-"* > "${TARGET_DIR}/usr/share/dosgames/RA1/MAIN.MIX"
-    chmod 644 "${TARGET_DIR}/usr/share/dosgames/RA1/MAIN.MIX"
-fi

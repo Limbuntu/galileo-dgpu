@@ -12,8 +12,8 @@
 
 | 镜像 | 内容 | 根文件系统 |
 |---|---|---|
-| `galileo_workstation` | 全功能 Linux:LXDE + GPU 加速 + NetSurf + Doom/OpenTTD/Minetest/Minecraft + radeonsi | 2400M |
-| `galileo_dosbox` | DOS 游戏机:X + DOSBox 0.74-3 + 8 个可玩 DOS 游戏,桌面一键图标 | 3600M |
+| `galileo_workstation` | 全功能 Linux:LXDE + GPU 加速 + NetSurf + Doom/OpenTTD/Minetest + radeonsi | 2400M |
+| `galileo_dosbox` | DOS 游戏机:X + DOSBox 0.74-3 + 15 个 DOS 游戏入口,桌面一键图标 | 3600M |
 
 `galileo_terminal` / `galileo_browser` / `galileo_nvidia` 三个 defconfig 只作参考保留,不再构建。
 
@@ -23,27 +23,14 @@
 
 | key | 游戏 | 说明 |
 |---|---|---|
-| `pal95` | 仙剑奇侠传 95 | `PAL.EXE` |
-| `civ1` | 文明 1 | 从两张软盘镜像启动 |
-| `nfs` | 极品飞车 SE | `NFSSE/NFS.EXE` |
-| `sc2000` | 模拟城市 2000 | `C_SC2000/SC2000.EXE` |
-| `sgz5` | 三国志 V PK | 把 `san5.cue`(数据 ISO + 20 条 MP3 CDDA 音轨)挂成 D: |
 | `doom` | Doom(Freedoom) | `DOOM.BAT` |
-| `ra1` | 红色警戒 1 | DOS v1.04:`RA.EXE` + `GAME.DAT` + `MAIN.MIX`/`REDALERT.MIX` |
-| `war2` | 魔兽争霸 II:黑潮 | DOS v1.50:`WAR2.EXE` + 光盘侧 `DATA/` |
+| `nfs1` `gta` `tomb` `quake` `duke3d` `dune2` `pop` `wolf3d` `homm2` `xys2` `jinyong` `uw2` `msfs5` `war2x` | 存档类游戏 | 每个游戏一个目录,挂成 `C:`;入口写在 `dosgame` 的 `case` 里 |
 
-红警和魔兽都要求"光盘在场",所以同一个目录挂两次:`C:` 当游戏盘,`D:` 当带卷标的 CD-ROM:
-
-```
-dosbox -conf ~/.dosbox/dosbox-0.74.conf \
-       -c "mount c /usr/share/dosgames/RA1" \
-       -c "mount d /usr/share/dosgames/RA1 -t cdrom -label CD1" \
-       -c "c:" -c "RA.EXE"
-```
-
-红警的运行配置在 `RA1/REDALERT.INI`(`[Sound] Card=13` 即 SB16,`Port=220h/IRQ=7/DMA=1`);
-魔兽用 `WAR2.INI`(`cdpath=d:\`、`cdaudio=0`)和 `WAR2/DRIVERS/` 下的 Miles 驱动映射。
-游戏数据合计 880MB,所以 ext2/分区尺寸提到 3600M。
+游戏数据本身不在 git 里——都是多 GB 的第三方媒体。构建机上先 stage 到
+`usr/share/dosgames/`,再由 `tools/push-dosgames.sh` 推到 CI runner 的
+`galileo-games` 卷,构建时把卷拷进 overlay。目录缺失时 `dosgame` 立即退出并打印
+`dosgame: <key>: <file> not found`,所以没有这个卷的镜像照样能进菜单;
+这也是分区做到 3600M 的原因。
 
 ## 系统栈
 
@@ -90,7 +77,7 @@ docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
 
 ## 板子速查
 
-- SSH:`root@<板子IP>`,密码 `<board-password>`
+- SSH:`root@<板子IP>`,密码见内部记录(本仓库不保存)
 - scp 坏了(dropbear):用 `cat file | ssh ... "cat > /dest"` 管道传文件
 - busybox tar 不认组合参数:`zcat f.tgz | tar -x -f - -C /`
 - 无 RTC 电池:`S46timesync` 开机从 HTTP Date 头同步时间
