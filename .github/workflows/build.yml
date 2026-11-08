@@ -1,8 +1,7 @@
 name: Build images
 
-# Builds moved to the self-hosted Gitea runner (.gitea/workflows/build.yml),
-# which also builds the dosbox image (it needs the galileo-games volume).
-# This workflow builds desktop + workstation, on workflow_dispatch only.
+# Builds of the two published images, on workflow_dispatch only: desktop and
+# workstation. The self-hosted runner keeps the private build with its cache.
 on:
   workflow_dispatch:
 
@@ -11,8 +10,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # dosbox is NOT built here: its game data comes from the private
-        # galileo-games volume, which a stock runner does not have.
         image: [desktop, workstation]
     runs-on: ubuntu-latest
     timeout-minutes: 355
