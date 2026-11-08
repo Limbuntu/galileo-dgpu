@@ -1,0 +1,25 @@
+#!/bin/sh
+# doomfps - print Doom's delivered frame rate on the board.
+#
+# Runs the normal 35 Hz-capped game loop (Freedoom Phase 1 attract mode) for
+# SECS seconds and derives the frame rate from the bytes doomgeneric pushes
+# into the X socket: this build has no MIT-SHM, so one frame is exactly one
+# XPutImage of 320*200*4*scale^2 bytes. `-timedemo` is not usable here - the
+# demo loops instead of returning the "timed N gametics" line.
+#
+#   doomfps [scaling] [seconds]     scaling 1 = 320x200 (default), 2 = 640x400
+S="${1:-1}"
+T="${2:-10}"
+cd /root/doom || exit 1
+DISPLAY="${DISPLAY:-:0}" ./doomgeneric -iwad freedoom1.wad -scaling "$S" \
+	> /tmp/doomfps.log 2>&1 &
+P=$!
+sleep 8
+a=$(awk '/^wchar/{print $2}' /proc/$P/io) || exit 1
+sleep "$T"
+b=$(awk '/^wchar/{print $2}' /proc/$P/io) || exit 1
+kill "$P" 2>/dev/null
+awk -v d=$((b - a)) -v s="$S" -v t="$T" 'BEGIN {
+	f = 320 * 200 * 4 * s * s
+	printf "Doom scaling=%d (%dx%d), %d B/frame: %.2f fps\n", s, 320 * s, 200 * s, f, d / t / f
+}'

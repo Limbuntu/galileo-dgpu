@@ -1,18 +1,21 @@
 #!/bin/sh
-# doom: switch to fbcon, run Doom, restore desktop afterwards.
-killall Xorg openbox xterm 2>/dev/null
+# doom: run Doom on KMS/DRM instead of through X.
+#
+# The X11 (xlib) backend pushed the whole 1280x1024 window through the X socket
+# every frame - 5.24 MB at the ~10.5 MB/s this CPU sustains, i.e. 2 fps, and
+# the picture repainted top-to-bottom while the display scanned it out.
+#
+# doomgeneric-kms renders 320x200 (256 KB/frame) into a dumb buffer and lets
+# the display controller's plane scaler stretch it to 1280x800, with vblank
+# page flips: ~28 fps, no tearing, no CPU cost for the upscale.
+#
+# DRM master is exclusive, so the desktop is stopped for the duration and
+# brought back afterwards (S50desktop restarts X + the whole LXDE session).
+S50=/etc/init.d/S50desktop
+cd /root/doom || exit 1
+$S50 stop >/dev/null 2>&1
+killall Xorg openbox lxpanel pcmanfm xterm 2>/dev/null
 sleep 2
-cd /root/doom
-# 320x200 framebuffer => doomgeneric picks scale 1 and only writes 256 KB per
-# frame instead of 1 MB (uncached fb writes are ~12 MB/s on this CPU)
-OLD_MODE=$(fbset -s 2>/dev/null | sed -n 's/^mode "\(.*\)"/\1/p' | head -1)
-fbset -g 320 200 320 200 32 2>/dev/null
-./doomgeneric -iwad freedoom1.wad
-[ -n "$OLD_MODE" ] && fbset "$OLD_MODE" 2>/dev/null
-# Doom exited: bring the desktop back
 rm -f /tmp/.X0-lock /tmp/.X11-unix/X0
-/usr/bin/Xorg :0 vt7 -nolisten tcp -config /etc/X11/xorg.conf >/var/log/X.log 2>&1 &
-sleep 8
-DISPLAY=:0 /usr/bin/openbox >/var/log/openbox.log 2>&1 &
-sleep 2
-DISPLAY=:0 xterm -geometry 100x30+8+8 -title console >/var/log/xterm.log 2>&1 &
+./doomgeneric-kms -iwad freedoom1.wad "$@"
+$S50 start >/dev/null 2>&1

@@ -242,3 +242,67 @@ GL 4.6 + glamor 环境下没有因为驱动栈而退化。`7zr b` 固定单线�
 终端窗口参数（录屏用）：`xterm -fa "Menlo:size=16" -geometry 80x30+120+180`；
 镜像原本没有等宽字体（`fc-match Monospace` → DejaVu Sans 比例字体），
 录屏前需把 Menlo 之类等宽字体放进 `/usr/share/fonts/` 并 `fc-cache -f`。
+
+## 10. Doom 帧率：为什么 X 里只有 2 fps，改成 KMS 后有 ~25 fps（2026-11-07）
+
+### 10.1 X11 (xlib) 后端：2 fps + 逐行刷新
+
+镜像里原来的 `/root/doom/doomgeneric` 是 xlib 后端：`DG_Init` 调
+`XOpenDisplay(NULL)` 后立即解引用返回值，所以旧启动器（先 `killall Xorg`）
+开机第一帧就 segfault（`segfault at 84 ... ip 0806cda2`，即 `XOpenDisplay`
+返回 NULL 后读 `+0x84`）。在 X 里跑起来之后：
+
+| 观测 | 数值 |
+|---|---|
+| 每帧 X 流量 | 1280x1024x4 = **5.24 MB**（`XPutImage` 整窗，不是 320x200） |
+| 客户端到 X 的吞吐上限 | **10.5 MB/s**（`/proc/<pid>/io` 的 `wchar`，与 `-scaling` 无关） |
+| 实际帧率 | 10.5 / 5.24 = **2.0 fps** |
+| 对照 `x11perf -putimage500` | 1 MB / 192.9 ms ≈ 5.2 MB/s |
+
+`-scaling 1/2` 只改绘制内容不改流量，所以帧率恒为 2 fps；`-scaling 3/4`
+会 segfault（rc=139）。
+
+"从上到下一行行刷"的来源：一帧 5.24 MB 要写 500 ms，HDMI-1 是
+1280x1024@120 Hz（每 8.3 ms 扫一遍），写缓冲期间显示器已经扫了 60 次，
+看到的就是从上往下推进的刷新带。`modesetting` 驱动不支持 `TearFree`
+（加了会报 `(WW) modeset(0): Option "TearFree" is not used`），Polaris 也
+用不了带 TearFree 的 radeon 驱动。
+
+### 10.2 KMS 后端：320x200 → GPU 放大到 1280x800，~25 fps
+
+`board/intel/galileo/doomgeneric/doomgeneric_kms.c`（基于 doomgeneric
+`doomgeneric_linuxvt.c`，换掉 framebuffer 部分）：
+
+- 画进 320x200 XRGB8888 dumb buffer，**每帧 CPU 只写 256 KB**；
+- 主 plane 的 `SRC=320x200 → CRTC=1280x800`（保持 16:10，上下黑边），
+  放大是显示控制器（DCN plane scaler）做的，**CPU 零成本**，而且有双线性
+  过滤，所以看起来比原来的整数 2x 邻域放大平滑；
+- 3 个 buffer 轮转 + `drmModePageFlip`（`PAGE_FLIP_EVENT`）→ vblank 整帧切换，无撕裂。
+
+| 配置 | 每帧 CPU 写入 | 实测帧率 |
+|---|---|---|
+| 320x200 → GPU 放大 1280x800 | 256 KB | **23–28 fps** |
+| 640x400 → GPU 放大 1280x800 | 1 MB（外加 `i_scale` 软件放大） | **9 fps** |
+| 1280x1024（X 里整窗 XPutImage） | 5.24 MB | **2 fps** |
+
+Doom 的循环本身限速 35 Hz，所以 320x200 这一档已经接近上限；剩下的时间
+花在 256 KB 非缓存 framebuffer 写入（板上实测约 12 MB/s）和 Doom 自身渲染。
+
+### 10.3 编译与启动
+
+```sh
+docker run --rm -v gres-out:/out -v "$PWD":/src debian:12 bash -c '
+  export PATH=/out/workstation/host/bin:$PATH
+  SYS=/out/workstation/host/i586-buildroot-linux-gnu/sysroot
+  cd /src/doomgeneric                      # 上游 git clone 后放进 doomgeneric_kms.c
+  SRCS=$(sed -n "s/^SRC_DOOM = //p" Makefile.linuxvt | sed "s/\.o/.c/g" |
+         sed "s/doomgeneric_linuxvt\.c/doomgeneric_kms.c/")
+  i586-buildroot-linux-gnu-gcc -O2 -DNORMALUNIX -DLINUX -D_DEFAULT_SOURCE \
+    -DDOOMGENERIC_RESX=320 -DDOOMGENERIC_RESY=200 \
+    -I$SYS/usr/include -I$SYS/usr/include/libdrm \
+    -o /src/doomgeneric-kms $SRCS -L$SYS/usr/lib -ldrm -lm'
+```
+
+`/usr/bin/doom` 会先停桌面（DRM master 是独占的），跑 `doomgeneric-kms`，
+退出后 `/etc/init.d/S50desktop start` 把 X + LXDE 整个拉回来。
+`doomgeneric-kms` 每 5 s 往 stdout 打一行 `kms: NN.N fps`（按 page flip 计数）。

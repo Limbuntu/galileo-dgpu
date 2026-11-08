@@ -1,3 +1,7 @@
 #!/bin/sh
-cd /root/doom
-exec ./doomgeneric -iwad freedoom1.wad
+# doom: run inside the running X session.
+#
+# This doomgeneric build is the X11 (xlib) backend; with DISPLAY unset it
+# XOpenDisplay(NULL)s, dereferences NULL and dies before the first frame.
+cd /root/doom || exit 1
+exec env DISPLAY="${DISPLAY:-:0}" ./doomgeneric -iwad freedoom1.wad "$@"
