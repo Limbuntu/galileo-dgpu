@@ -21,6 +21,20 @@ GitHub CI 构建 `desktop` 与 `workstation`;`buildserver`(Gitea,私有)保留�
 
 `galileo_terminal` / `galileo_browser` / `galileo_nvidia` 三个 defconfig 只作参考保留,不再构建。
 
+## 已测试的显卡
+
+本次在板子上端到端跑通的是三张卡,除此之外都没有实测:
+
+| 显卡 | 驱动 | 可用功能 |
+|---|---|---|
+| AMD Radeon HD 6450(Caicos) | `radeon` + r600g | KMS 输出、2D 加速 |
+| AMD Radeon RX 580 | `amdgpu` + radeonsi | glamor 2D、UVD 4K 硬解(零拷贝那条路) |
+| NVIDIA GeForce GTX TITAN X | `nouveau` | KMS 输出、2D 加速 |
+
+镜像里带的是这三张卡对应的 Mesa、内核模块和固件。Mesa/Linux 还支持的其他卡这里
+没有验证——换一张卡就得自己调:模块和固件在不在、用哪个驱动、modesetting/Xorg 的
+行为,都要自己试。调通了欢迎反馈。
+
 ## 硬件
 
 | 主板和两张显卡 | 背面 |

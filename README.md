@@ -30,6 +30,23 @@ Two remotes, two histories. `buildserver` (Gitea, private) keeps the full tree;
 media, no old images, no vendor CI, and board addresses/passwords replaced by
 placeholders. The GitHub matrix builds `desktop` and `workstation`.
 
+## Tested GPUs
+
+Three cards are brought up end to end on this board; that list is all that has
+been verified:
+
+| Card | Driver | Working |
+|---|---|---|
+| AMD Radeon HD 6450 (Caicos) | `radeon` + r600g | KMS output, 2D acceleration |
+| AMD Radeon RX 580 | `amdgpu` + radeonsi | glamor 2D, UVD 4K decode (the zero-copy path) |
+| NVIDIA GeForce GTX TITAN X | `nouveau` | KMS output, 2D acceleration |
+
+Mesa, the kernel modules and the firmware for these three are in the images.
+Anything else that Mesa or Linux happens to support is untested here — with a
+different card, expect to debug it yourself: module and firmware availability,
+driver selection, modesetting/Xorg behaviour. Reports from other cards are
+welcome.
+
 ## Hardware
 
 | The board and two cards | Back side |
