@@ -99,4 +99,24 @@ git remote add github "$GH_URL"
 # shellcheck disable=SC2086
 git push ${PUSH_ARGS:-} github "refs/heads/$BRANCH:refs/heads/$BRANCH"
 
+# Every tag the remote already carries is rewritten as well: a tag left on the
+# old history keeps the removed content reachable (and clonable) even after the
+# branch no longer references it.
+remote_tags=$(git ls-remote --refs --tags "$GH_URL" 2>/dev/null |
+	sed -n 's|.*refs/tags/||p' | sort -u)
+if [ -n "$remote_tags" ]; then
+	for t in $remote_tags; do
+		if git rev-parse -q --verify "refs/tags/$t" >/dev/null; then
+			echo "refs/tags/$t:refs/tags/$t"
+		else
+			echo "push-github: remote tag $t has no filtered counterpart" >&2
+		fi
+	done > "$WORK/tagrefs"
+	if [ -s "$WORK/tagrefs" ]; then
+		echo "== pushing $(wc -l < "$WORK/tagrefs" | tr -d ' ') tag(s)"
+		# shellcheck disable=SC2086
+		git push ${PUSH_ARGS:-} github $(cat "$WORK/tagrefs")
+	fi
+fi
+
 echo "== done: $(git log --oneline -1)"
