@@ -1,14 +1,20 @@
 #!/bin/sh
 # push-github.sh — publish this repo's main to GitHub through the export filter.
 #
-# The GitHub history is a rewrite of the Gitea one: never in it are the DOS game
-# data, the old 1.4 GB images/, the vendor CI workflows or Minecraft; board
-# addresses and the SSH password appear only as placeholders. The Gitea remote
-# keeps the unfiltered history — that is where the game data and private build
-# live.
+# The GitHub history is a rewrite of the Gitea one: never in it are the
+# third-party media directories, the old 1.4 GB images/, the vendor CI or the
+# Windows-platform overlay; board addresses and the SSH password appear only as
+# placeholders. The Gitea remote keeps the unfiltered history — that is where
+# the private build lives.
 #
-#   ./tools/push-github.sh                # update GitHub (fast-forward)
-#   PUSH_ARGS=--force ./tools/push-github.sh   # first migration / history repair
+#   ./tools/push-github.sh                    # update GitHub (fast-forward)
+#   PUSH_ARGS=--force ./tools/push-github.sh  # history change / repair
+#
+# Title-level scrubbing (third-party program and audio names) is deliberately
+# NOT in this file: it lives in tools/export-extra-filters.local, which is
+# git-ignored. Format, one directive per line:
+#     regex <extended-regexp>      drop every matching path from history
+#     replace <old==>new>          rewrite every matching byte in every blob
 #
 # The rewrite is deterministic: identical input commits give identical output
 # hashes, so ordinary pushes work as soon as GitHub has seen the filtered
@@ -47,29 +53,38 @@ password `<board-password>`==>password `<board-password>`
 password <board-password>==>password <board-password>
 GITEA-PRIVATE==>GITEA-PRIVATE
 BOARD-IP==>BOARD-IP
-track-a==>track-a
-track-b==>track-b
-the artist==>the artist
 EOF
 
-# Commercial game material: the launchers, icons and per-game desktop entries
-# that used to sit in the dosbox overlay, the staged data, and the old Windows
-# overlay that carried them. Scoped to board/intel/galileo/ so buildroot's own
-# nfs-utils / wolfssl / mc packages are untouched. Doom is absent on purpose:
-# Freedoom and this repo's KMS backend are free software.
-GAME_RE='(?i)^board/intel/galileo/.*(pal95|pal_dos|san5|sgz5|simcity|sc2000|civ1|nfs|redalert|ra1|war2|warcraft|tomb|quake|duke|wolf|homm|heroes|prince|pop|dune2|xys2|jinyong|uw2|msfs|minecraft|gta)'
+EXTRA="$SRC/tools/export-extra-filters.local"
 
 echo "== filtering history"
-git filter-repo --force --invert-paths \
+set -- --force --invert-paths \
 	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames \
 	--path board/intel/galileo/dosgames-assets \
+	--path board/intel/galileo/rootfs_overlay_dosbox/root/Desktop \
+	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/applications \
+	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/icons \
+	--path board/intel/galileo/rootfs_overlay_v4 \
+	--path board/intel/galileo/rootfs_overlay_workstation/root/mc \
+	--path board/intel/galileo/rootfs_overlay_workstation/root/Desktop \
+	--path board/intel/galileo/rootfs_overlay_workstation/usr/share/applications \
+	--path board/intel/galileo/rootfs_overlay_workstation/usr/share/icons \
 	--path images \
 	--path .gitea \
-	--path board/intel/galileo/rootfs_overlay_desktop/root/doom/doom.log \
-	--path board/intel/galileo/rootfs_overlay_workstation/root/mc \
-	--path board/intel/galileo/rootfs_overlay_v4/root/mc \
-	--path board/intel/galileo/rootfs_overlay_v4/root/Desktop/minecraft.desktop \
-	--path-regex "$GAME_RE" \
+	--path board/intel/galileo/rootfs_overlay_desktop/root/doom/doom.log
+
+if [ -f "$EXTRA" ]; then
+	while IFS=' ' read -r _kind _value; do
+		case "$_kind" in
+		regex)   set -- "$@" --path-regex "$_value" ;;
+		replace) printf '%s\n' "$_value" >> "$WORK/replace.txt" ;;
+		esac
+	done < "$EXTRA"
+else
+	echo "push-github: warning: $EXTRA absent — only the structural paths are filtered" >&2
+fi
+
+git filter-repo "$@" \
 	--replace-text "$WORK/replace.txt" \
 	--message-callback '
 for _old, _new in ((b"root@<board-ip>", b"root@<board-ip>"),
@@ -79,16 +94,49 @@ for _old, _new in ((b"root@<board-ip>", b"root@<board-ip>"),
 return message' >/dev/null
 
 echo "== checking the result"
-bad_paths=$(git ls-tree -r --name-only HEAD |
-	grep -E 'usr/share/dosgames/|dosgames-assets/|^images/|^\.gitea/|/root/mc/' || true)
-bad_paths="$bad_paths$(git ls-tree -r --name-only HEAD | grep -E "$GAME_RE" || true)"
-[ -z "$bad_paths" ] || { echo "push-github: filtered tree still has:" >&2; echo "$bad_paths" >&2; exit 1; }
+bad=""
+for _p in images .gitea \
+	  board/intel/galileo/dosgames-assets \
+	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames \
+	  board/intel/galileo/rootfs_overlay_dosbox/root/Desktop \
+	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/applications \
+	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/icons \
+	  board/intel/galileo/rootfs_overlay_v4 \
+	  board/intel/galileo/rootfs_overlay_workstation/root/mc \
+	  board/intel/galileo/rootfs_overlay_workstation/root/Desktop \
+	  board/intel/galileo/rootfs_overlay_workstation/usr/share/applications \
+	  board/intel/galileo/rootfs_overlay_workstation/usr/share/icons; do
+	_hit=$(git ls-tree -r --name-only HEAD -- "$_p")
+	[ -z "$_hit" ] || bad="$bad$_hit
+"
+done
+if [ -f "$EXTRA" ]; then
+	_hist=$(git log --all --format= --name-only | sort -u)
+	_leakpat=""
+	while IFS=' ' read -r _kind _value; do
+		case "$_kind" in
+		regex)
+			_hit=$(printf '%s\n' "$_hist" | grep -E "$_value" || true)
+			[ -z "$_hit" ] || bad="$bad$_hit
+" ;;
+		replace)
+			_old=${_value%%==>*}
+			_leakpat="$_leakpat${_leakpat:+|}$_old" ;;
+		esac
+	done < "$EXTRA"
+	if [ -n "$_leakpat" ]; then
+		_hit=$(git grep -I -n -E "$_leakpat" $(git rev-list --all) -- 2>/dev/null | head -3 || true)
+		[ -z "$_hit" ] || bad="$bad$_hit
+"
+	fi
+fi
+[ -z "$bad" ] || { echo "push-github: filtered tree still has:" >&2; printf '%s' "$bad" >&2; exit 1; }
 
 big=$(git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectsize)' |
 	awk '$1=="blob" && $2 > 50000000' | head -1)
 [ -z "$big" ] || { echo "push-github: a blob over 50 MB survived the filter" >&2; exit 1; }
 
-leak=$(git grep -I -n -E '192\.168\.12[36]\.|sshpass -p <board-password>|password `<board-password>`|the artist|track-a|track-b' $(git rev-list --all) -- 2>/dev/null | head -5 || true)
+leak=$(git grep -I -n -E '192\.168\.12[36]\.|sshpass -p <board-password>|password `<board-password>`' $(git rev-list --all) -- 2>/dev/null | head -5 || true)
 [ -z "$leak" ] || { echo "push-github: address or password still in history:" >&2; echo "$leak" >&2; exit 1; }
 
 leak=$(git log --all --format='%B' | grep -nE '192\.168\.12[36]\.' | head -5 || true)
@@ -105,11 +153,11 @@ git push ${PUSH_ARGS:-} github "refs/heads/$BRANCH:refs/heads/$BRANCH"
 remote_tags=$(git ls-remote --refs --tags "$GH_URL" 2>/dev/null |
 	sed -n 's|.*refs/tags/||p' | sort -u)
 if [ -n "$remote_tags" ]; then
-	for t in $remote_tags; do
-		if git rev-parse -q --verify "refs/tags/$t" >/dev/null; then
-			echo "refs/tags/$t:refs/tags/$t"
+	for _t in $remote_tags; do
+		if git rev-parse -q --verify "refs/tags/$_t" >/dev/null; then
+			echo "refs/tags/$_t:refs/tags/$_t"
 		else
-			echo "push-github: remote tag $t has no filtered counterpart" >&2
+			echo "push-github: remote tag $_t has no filtered counterpart" >&2
 		fi
 	done > "$WORK/tagrefs"
 	if [ -s "$WORK/tagrefs" ]; then

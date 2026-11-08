@@ -20,3 +20,7 @@ tmp/games/
 board/intel/galileo/rootfs_overlay_desktop/root/doom/doom.log
 # screen recordings / demo clips live outside the tree
 assets/
+
+# operator-side export filters (kept out of the repo: they name the content
+# the export removes)
+tools/export-extra-filters.local
