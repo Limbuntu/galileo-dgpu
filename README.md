@@ -1,10 +1,10 @@
 # Galileo Gen 2 — Discrete GPU Rebuild Project
 
-[简体中文文档](README.zh-CN.md)
+[中文文档](README.zh-CN.md)
 
 Reviving an Intel Galileo Gen 2 (Quark X1000, 400 MHz i586, 256 MB RAM, no SSE2/PAE/CMOV)
-as a fully usable Linux computer: LXDE desktop, GPU acceleration, browser, and games —
-with any one of three discrete GPUs driving the display.
+as a fully usable Linux computer: LXDE desktop, GPU acceleration, 4K video decode,
+and a browser — with any one of three discrete GPUs driving the display.
 
 ## Image Lineup
 
@@ -12,9 +12,9 @@ Three images. One defconfig, one overlay layer, standard names.
 
 | defconfig | Image | Contents | Rootfs |
 |---|---|---|---|
-| `galileo_desktop` | desktop | X + openbox + xterm + pcmanfm, software 2D only | 800M |
+| `galileo_desktop` | desktop | X + openbox + pcmanfm + the GPU media stack (VA-API/UVD 4K decode, mpv, ffplay) | 3000M |
 | `galileo_workstation` | workstation | desktop + NetSurf + OpenTTD/Doom/OpenArena + glmark2/gtkperf/mesa-demos | 3000M |
-| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + 15 DOS game entries + console menu | 3600M |
+| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + console menu; game data comes from the private volume | 3600M |
 
 Naming convention — do not invent new suffixes:
 
@@ -29,28 +29,47 @@ Two remotes, two histories. `buildserver` (Gitea, private) has the full tree and
 the game-data stage; `github` gets a filtered export through
 `tools/push-github.sh` — no game data, no old images, no vendor CI, and board
 addresses/passwords replaced by placeholders. The GitHub matrix builds
-`desktop` and `dosbox` on a stock runner; the Gitea runner builds `workstation`
-(a cold build needs 5-6 h, over GitHub's job ceiling) and is the only one that
-mounts the `galileo-games` volume.
+`desktop` and `workstation`; the Gitea runner builds all three images and is the
+only one that mounts the `galileo-games` volume, so its dosbox image is the one
+with games in it.
 
 ## DOS image (`galileo_dosbox`)
 
 Boots into a framebuffer-console menu on tty1; picking a number runs
-`dosgame <key>`, which mounts the game directory and starts DOSBox fullscreen
-through SDL's fbcon driver. There is no X, no window manager and no getty on
-tty1: `q` drops to a shell and `exit` brings the menu back.
+`dosgame <key>`, which mounts one directory and starts DOSBox fullscreen through
+SDL's fbcon driver. There is no X, no window manager and no getty on tty1: `q`
+drops to a shell and `exit` brings the menu back.
 
-| key | Game | Notes |
-|---|---|---|
-| `doom` | Doom (Freedoom) | `DOOM.BAT` |
-| `nfs1` `gta` `tomb` `quake` `duke3d` `dune2` `pop` `wolf3d` `homm2` `xys2` `jinyong` `uw2` `msfs5` `war2x` | archive games | one directory each, mounted as `C:`; the entries are listed in the `case` in `dosgame` |
-
-The game data itself is not in git — it is multi-GB third-party media. It is
-staged into `usr/share/dosgames/` on the build host and reaches the CI runner
-through the `galileo-games` volume (`tools/push-dosgames.sh`); the build copies
-the volume into the overlay. A key whose directory is missing exits at once with
+Nothing in the repository says what those directories contain — the menu is a
+launcher, the titles are whatever the data volume provides. Game data is
+multi-GB third-party media and is never in git: it is staged into
+`usr/share/dosgames/` on the build host and reaches the CI runner through the
+`galileo-games` volume (`tools/push-dosgames.sh`), which the build copies into
+the overlay. A key whose directory is missing exits at once with
 `dosgame: <key>: <file> not found`, so an image built without the volume still
 boots to the menu. That is why the partition is 3600M.
+
+## 4K video (A card, VA-API/UVD)
+
+The point of the discrete GPU: decode 4K on the card and put it on the panel
+without a copy through X.
+
+- `minplayer` — FFmpeg VA-API decode → `vaExportSurfaceHandle` dmabuf → EGL
+  `EGL_LINUX_DMA_BUF_EXT` → GLES2 YUV→RGB → `drmModeAddFB2` → `drmModePageFlip`.
+  Built by `board/intel/galileo/minplayer/build.sh` and installed as
+  `/usr/bin/minplayer` by `post-build.sh`, so **both the desktop and the
+  workstation image carry it**.
+- `media-console` — the menu on the board (`xterm` from the desktop): windowed
+  `ffplay`, `mpv --hwdec=vdpau`, KMS-direct `kms-player`, pre-baked `flip-demo`,
+  TCP `stream-demo`, and the two zero-copy entries (`minplayer-demo`, incl.
+  4K30). `minplayer-demo` stops X first (DRM master is exclusive) and restores
+  the desktop afterwards.
+- Packages: `libva`, Mesa `radeonsi`+`LLVM`+`EGL`+`VDPAU`, `libvdpau`, `mpv`,
+  `ffmpeg`(+`ffplay`, SDL2/X11) — in `galileo_desktop_defconfig` and
+  `galileo_workstation_defconfig` alike.
+- Clips live in `/root/media` on the board, not in the image (same rule as the
+  game data); `media-console` prints the duration it reads back through
+  `ffmpeg -i`.
 
 ## System Stack
 
@@ -69,12 +88,14 @@ boots to the menu. That is why the partition is 3600M.
 
 ## Key Files
 
-- `configs/galileo_{workstation,dosbox}_defconfig` — buildroot package selection
+- `configs/galileo_{desktop,workstation,dosbox}_defconfig` — buildroot package selection
 - `board/intel/galileo/linux-rx580.config` — kernel config (non-DC radeon path; Quark has no SSE2)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf, init scripts, golden files
-- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — per-game mount + launch table
+- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — mount + launch table for the DOS entries
 - `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox defaults
-- `board/intel/galileo/post-build.sh` — gconv install (iconv), amdgpu firmware trim
+- `board/intel/galileo/post-build.sh` — minplayer install, gconv (iconv), amdgpu firmware trim
+- `board/intel/galileo/minplayer/` — VA-API/EGL/KMS player source, build script, i586 binary
+- `board/intel/galileo/rootfs_overlay_desktop/usr/bin/media-console` — on-board media menu (4K entries)
 - `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip numbers and the full benchmark procedure
 - `package/dosbox/` — DOSBox 0.74-3 (SDL detection fix, libglu dep)
 - `package/netsurf/` — browser patches
@@ -125,9 +146,7 @@ payload); the SPI write and boot still need hardware validation. See
 - glibc images need gconv modules or iconv/g_convert break (openbox "Unnamed Window" titles)
 - XDG menus need `<DefaultAppDirs/>` in the XML and `lxde-applications.menu` naming
 - MIT-SHM requires `image->data = shmaddr` after `shmat`
-- DOS games may demand a CD-ROM: a plain `C:` mount is not enough, the same directory
-  must also be mounted `-t cdrom` with `-label` (DOSBox 0.74-3 supports both)
-- Red Alert DOS validates `REDALERT.INI` `[Sound] Card=`: an out-of-table value aborts with
-  `Cannot initialize detection system (15)`
-- Warcraft II DOS reads `MUDDAT.CUD`/`SNDDAT.WAR` from the disc, not from the install dir —
-  ship them inside `DATA/` and keep `cdpath=d:\` in `WAR2.INI`
+- DOSBox may need a directory mounted twice (`C:` and `-t cdrom` with a `-label`) when the
+  program insists on an inserted disc
+- Some DOS programs refuse a `[Sound] Card=` value outside their own table — the launcher
+  ships the value the setup utility wrote

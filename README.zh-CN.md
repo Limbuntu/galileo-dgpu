@@ -3,34 +3,51 @@
 [English README](README.md)
 
 把一块 Intel Galileo Gen 2(Quark X1000,400MHz i586,256MB 内存,无 SSE2/PAE/CMOV)
-重制为一台功能齐全的 Linux 电脑:LXDE 桌面、GPU 加速、浏览器、游戏——
+重制为一台功能齐全的 Linux 电脑:LXDE 桌面、GPU 加速、4K 视频硬解、浏览器——
 由三张候选独显中的任意一张驱动显示。
 
 ## 镜像阵容
 
-只构建、只发布两个镜像(CI matrix:`workstation`、`dosbox`)。
+GitHub CI 只构建 `desktop` 与 `workstation`;`dosbox` 只在私有 Gitea runner 上构建
+(它需要 `galileo-games` 卷里的游戏数据)。
 
 | 镜像 | 内容 | 根文件系统 |
 |---|---|---|
-| `galileo_workstation` | 全功能 Linux:LXDE + GPU 加速 + NetSurf + Doom/OpenTTD/Minetest + radeonsi | 2400M |
-| `galileo_dosbox` | DOS 游戏机:X + DOSBox 0.74-3 + 15 个 DOS 游戏入口,桌面一键图标 | 3600M |
+| `galileo_desktop` | LXDE 桌面 + GPU media 栈(VA-API/UVD 4K 硬解、mpv、ffplay) | 3000M |
+| `galileo_workstation` | 全功能 Linux:desktop + NetSurf + OpenTTD/Minetest + 跑分工具 + radeonsi | 3000M |
+| `galileo_dosbox` | DOS 机:fbcon + DOSBox 0.74-3 + 控制台菜单(游戏数据来自私有卷) | 3600M |
 
 `galileo_terminal` / `galileo_browser` / `galileo_nvidia` 三个 defconfig 只作参考保留,不再构建。
 
 ## DOS 镜像(`galileo_dosbox`)
 
-开机直接进 LXDE,每个游戏一个桌面图标;图标执行 `dosgame <key>`,由它挂载目录并全屏启动 DOSBox。
+开机进 tty1 的 fbcon 菜单,按数字执行 `dosgame <key>`:挂载一个目录,全屏起 DOSBox。
+没有 X,没有窗口管理器,`q` 退到 shell,`exit` 回到菜单。
 
-| key | 游戏 | 说明 |
-|---|---|---|
-| `doom` | Doom(Freedoom) | `DOOM.BAT` |
-| `nfs1` `gta` `tomb` `quake` `duke3d` `dune2` `pop` `wolf3d` `homm2` `xys2` `jinyong` `uw2` `msfs5` `war2x` | 存档类游戏 | 每个游戏一个目录,挂成 `C:`;入口写在 `dosgame` 的 `case` 里 |
-
-游戏数据本身不在 git 里——都是多 GB 的第三方媒体。构建机上先 stage 到
+仓库里不描述这些目录里装的是什么——菜单只是启动器,标题由数据卷决定。
+游戏数据本身都是多 GB 的第三方媒体,从不进 git:构建机上先 stage 到
 `usr/share/dosgames/`,再由 `tools/push-dosgames.sh` 推到 CI runner 的
 `galileo-games` 卷,构建时把卷拷进 overlay。目录缺失时 `dosgame` 立即退出并打印
 `dosgame: <key>: <file> not found`,所以没有这个卷的镜像照样能进菜单;
 这也是分区做到 3600M 的原因。
+
+## 4K 视频(A 卡,VA-API/UVD)
+
+独显的意义就在这里:在显卡上解 4K,再直接翻页到屏上,中间不经过 X 的拷贝。
+
+- `minplayer` —— FFmpeg VA-API 解码 → `vaExportSurfaceHandle` dmabuf → EGL
+  `EGL_LINUX_DMA_BUF_EXT` → GLES2 YUV→RGB → `drmModeAddFB2` → `drmModePageFlip`。
+  由 `board/intel/galileo/minplayer/build.sh` 交叉编译,`post-build.sh` 装成
+  `/usr/bin/minplayer`,所以 **desktop 和 workstation 两个镜像都带**。
+- `media-console` —— 板上的媒体菜单(desktop 的 xterm 里跑):窗口 ffplay、
+  `mpv --hwdec=vdpau`、KMS 直出 `kms-player`、预烘焙帧 `flip-demo`、
+  TCP `stream-demo`,以及两条零拷贝入口(`minplayer-demo`,含 4K30)。
+  `minplayer-demo` 先停 X(DRM master 独占),结束后把桌面拉回来。
+- 依赖包:`libva`、Mesa `radeonsi`+`LLVM`+`EGL`+`VDPAU`、`libvdpau`、`mpv`、
+  `ffmpeg`(+`ffplay`,SDL2/X11)——`galileo_desktop_defconfig` 与
+  `galileo_workstation_defconfig` 里完全一致。
+- 片源放在板上 `/root/media`,不进镜像(和游戏数据同一条规矩);`media-console`
+  用 `ffmpeg -i` 现读时长显示在菜单上。
 
 ## 系统栈
 
@@ -52,7 +69,7 @@
 - `configs/galileo_{workstation,dosbox}_defconfig` — buildroot 包选择
 - `board/intel/galileo/linux-rx580.config` — 内核配置(非 DC radeon 路径;Quark 无 SSE2)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf、启动脚本、黄金文件
-- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — 每个游戏的挂载 + 启动表
+- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — DOS 条目的挂载 + 启动表
 - `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox 默认配置
 - `board/intel/galileo/post-build.sh` — gconv 安装(iconv)、amdgpu 固件裁剪
 - `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip 跑分结果与完整测试流程
@@ -92,9 +109,5 @@ docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
 - glibc 镜像缺 gconv 模块则 iconv/g_convert 全崩(openbox 标题变 "Unnamed Window")
 - XDG 菜单 XML 必须含 `<DefaultAppDirs/>`,文件名必须是 `lxde-applications.menu`
 - MIT-SHM 在 `shmat` 后必须设置 `image->data = shmaddr`
-- DOS 游戏可能要"光盘":只挂 `C:` 不够,同一目录还要 `-t cdrom -label` 挂成 D:
-  (DOSBox 0.74-3 两者都支持)
-- 红警 DOS 会校验 `REDALERT.INI` 的 `[Sound] Card=`:越界值直接
-  `Cannot initialize detection system (15)` 退出
-- 魔兽 DOS 从光盘读 `MUDDAT.CUD`/`SNDDAT.WAR`,不在安装目录里 —— 要放进 `DATA/`
-  并保持 `WAR2.INI` 的 `cdpath=d:\`
+- DOSBox 遇到"要求光盘在场"的程序,同一目录要挂两次(`C:` 和 `-t cdrom -label` 的 D:)
+- 有些 DOS 程序只认它自己 setup 写进配置的 `[Sound] Card=` 值,越界直接退出
