@@ -59,11 +59,14 @@ EXTRA="$SRC/tools/export-extra-filters.local"
 
 echo "== filtering history"
 set -- --force --invert-paths \
-	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames \
+	--path board/intel/galileo/rootfs_overlay_dosbox \
 	--path board/intel/galileo/dosgames-assets \
-	--path board/intel/galileo/rootfs_overlay_dosbox/root/Desktop \
-	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/applications \
-	--path board/intel/galileo/rootfs_overlay_dosbox/usr/share/icons \
+	--path board/intel/galileo/post-build-dosbox.sh \
+	--path configs/galileo_dosbox_defconfig \
+	--path package/dosbox \
+	--path tools/push-dosgames.sh \
+	--path tools/smoke-dosgame.sh \
+	--path tools/verify-dosbox-image.sh \
 	--path board/intel/galileo/rootfs_overlay_v4 \
 	--path board/intel/galileo/rootfs_overlay_workstation/root/mc \
 	--path board/intel/galileo/rootfs_overlay_workstation/root/Desktop \
@@ -97,10 +100,13 @@ echo "== checking the result"
 bad=""
 for _p in images .gitea \
 	  board/intel/galileo/dosgames-assets \
-	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/dosgames \
-	  board/intel/galileo/rootfs_overlay_dosbox/root/Desktop \
-	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/applications \
-	  board/intel/galileo/rootfs_overlay_dosbox/usr/share/icons \
+	  board/intel/galileo/rootfs_overlay_dosbox \
+	  board/intel/galileo/post-build-dosbox.sh \
+	  configs/galileo_dosbox_defconfig \
+	  package/dosbox \
+	  tools/push-dosgames.sh \
+	  tools/smoke-dosgame.sh \
+	  tools/verify-dosbox-image.sh \
 	  board/intel/galileo/rootfs_overlay_v4 \
 	  board/intel/galileo/rootfs_overlay_workstation/root/mc \
 	  board/intel/galileo/rootfs_overlay_workstation/root/Desktop \
