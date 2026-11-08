@@ -63,12 +63,10 @@ set -- --force --invert-paths \
 	--path board/intel/galileo/dosgames-assets \
 	--path board/intel/galileo/post-build-dosbox.sh \
 	--path configs/galileo_dosbox_defconfig \
-	--path package/dosbox \
-	--path package/dosdrm \
-	--path board/intel/galileo/dosdrm.c \
 	--path tools/push-dosgames.sh \
 	--path tools/smoke-dosgame.sh \
 	--path tools/verify-dosbox-image.sh \
+	--path board/intel/galileo/dosdrm.c \
 	--path board/intel/galileo/rootfs_overlay_v4 \
 	--path board/intel/galileo/rootfs_overlay_workstation/root/mc \
 	--path board/intel/galileo/rootfs_overlay_workstation/root/Desktop \
@@ -105,9 +103,6 @@ for _p in images .gitea \
 	  board/intel/galileo/rootfs_overlay_dosbox \
 	  board/intel/galileo/post-build-dosbox.sh \
 	  configs/galileo_dosbox_defconfig \
-	  package/dosbox \
-	  package/dosdrm \
-	  board/intel/galileo/dosdrm.c \
 	  tools/push-dosgames.sh \
 	  tools/smoke-dosgame.sh \
 	  tools/verify-dosbox-image.sh \
