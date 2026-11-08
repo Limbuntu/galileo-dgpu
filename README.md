@@ -25,8 +25,13 @@ Naming convention — do not invent new suffixes:
 | workstation | `board/intel/galileo/rootfs_overlay_workstation` (apps/bench extras on top of desktop) |
 | dosbox | `board/intel/galileo/rootfs_overlay_dosbox` (overrides the X session with the fbcon menu) |
 
-CI: the GitHub matrix builds `desktop`, `workstation`, `dosbox`; the Gitea
-private build builds `workstation` only (same image plus the Bing welcome page).
+Two remotes, two histories. `buildserver` (Gitea, private) has the full tree and
+the game-data stage; `github` gets a filtered export through
+`tools/push-github.sh` — no game data, no old images, no vendor CI, and board
+addresses/passwords replaced by placeholders. The GitHub matrix builds
+`desktop` and `dosbox` on a stock runner; the Gitea runner builds `workstation`
+(a cold build needs 5-6 h, over GitHub's job ceiling) and is the only one that
+mounts the `galileo-games` volume.
 
 ## DOS image (`galileo_dosbox`)
 
