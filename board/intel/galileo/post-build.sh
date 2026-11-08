@@ -16,6 +16,12 @@ fi
 # display 0 so our S50desktop cannot start its own server.
 rm -f ${TARGET_DIR}/etc/init.d/S40xorg
 
+# minplayer: VA-API decode -> EGL -> KMS page flip, the 4K path behind
+# media-console. The i586 binary is built by minplayer/build.sh and kept in the
+# tree; installing it here means every image (desktop, workstation) ships the
+# same build instead of relying on a manual scp to the board.
+install -m 0755 board/intel/galileo/minplayer/minplayer "${TARGET_DIR}/usr/bin/minplayer"
+
 # glibc gconv modules (iconv needs them; buildroot doesn't install to target)
 if [ -d "${STAGING_DIR}/usr/lib/gconv" ] && [ ! -d "${TARGET_DIR}/usr/lib/gconv" ]; then
     cp -a "${STAGING_DIR}/usr/lib/gconv" "${TARGET_DIR}/usr/lib/"

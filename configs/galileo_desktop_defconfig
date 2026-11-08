@@ -1,7 +1,8 @@
 # Galileo Gen 2 - desktop image
-# X + openbox + xterm + pcmanfm, no browser, no games, no benchmarks.
-# Software 2D only (modesetting falls back to ShadowFB); the GPU is used
-# solely for KMS output.
+# X + openbox + xterm + pcmanfm + the GPU media stack: the same UVD/VA-API
+# 4K playback path the workstation image has (libva + minplayer, mpv/VDPAU,
+# ffplay), so a desktop card can show video without the extra workstation
+# apps. Falls back to swrast on a card without UVD.
 BR2_x86_x1000=y
 BR2_TOOLCHAIN_BUILDROOT_WCHAR=y
 # pcmanfm -> libgtk2 -> pango -> harfbuzz needs a C++ runtime
@@ -22,7 +23,7 @@ BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="board/intel/galileo/linux-rx580.config"
 BR2_LINUX_KERNEL_INSTALL_TARGET=y
 BR2_TARGET_ROOTFS_EXT2=y
 BR2_TARGET_ROOTFS_EXT2_4=y
-BR2_TARGET_ROOTFS_EXT2_SIZE="800M"
+BR2_TARGET_ROOTFS_EXT2_SIZE="3000M"
 BR2_TARGET_GRUB2=y
 BR2_TARGET_GRUB2_I386_EFI=y
 BR2_PACKAGE_HOST_DOSFSTOOLS=y
@@ -33,7 +34,7 @@ BR2_PACKAGE_HOST_MTOOLS=y
 BR2_PACKAGE_LINUX_FIRMWARE=y
 BR2_PACKAGE_LINUX_FIRMWARE_RADEON=y
 
-# X.org + xterm 终端(modesetting + ShadowFB,无加速)
+# X.org + xterm 终端(modesetting; GPU 加速由下面的 media 栈提供)
 BR2_PACKAGE_XORG7=y
 BR2_PACKAGE_XSERVER_XORG_SERVER=y
 BR2_PACKAGE_XSERVER_XORG_SERVER_MODULAR=y
@@ -53,3 +54,31 @@ BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
 BR2_PACKAGE_BASH=y
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
 BR2_CCACHE=y
+
+# --- GPU media stack: the A-card 4K path, identical to the workstation image ---
+# minplayer (VA-API -> dmabuf -> EGL -> GBM -> page flip) needs libva, EGL/GLES
+# from Mesa and the DRM/amdgpu node; mpv presents VDPAU frames for the windowed
+# path, ffplay for the software-decoded 352x288/256x192 clips.
+BR2_PACKAGE_LIBDRM=y
+BR2_PACKAGE_LIBDRM_AMDGPU=y
+BR2_PACKAGE_LIBDRM_RADEON=y
+BR2_PACKAGE_MESA3D=y
+BR2_PACKAGE_MESA3D_DRI_DRIVER_SWRAST=y
+BR2_PACKAGE_MESA3D_OPENGL_GLX=y
+BR2_PACKAGE_MESA3D_OPENGL_EGL=y
+BR2_PACKAGE_MESA3D_GALLIUM_DRIVER_R600=y
+BR2_PACKAGE_MESA3D_GALLIUM_DRIVER_RADEONSI=y
+BR2_PACKAGE_MESA3D_LLVM=y
+BR2_PACKAGE_LIBVA=y
+# VDPAU state tracker: hardware decode through radeonsi/UVD, X11 only
+BR2_PACKAGE_MESA3D_VDPAU=y
+BR2_PACKAGE_LIBVDPAU=y
+BR2_PACKAGE_MPV=y
+BR2_PACKAGE_FFMPEG=y
+BR2_PACKAGE_FFMPEG_FFPLAY=y
+BR2_PACKAGE_SDL2_X11=y
+
+# audio out (aplay/amixer) for the media console and the panel applet
+BR2_PACKAGE_ALSA_UTILS=y
+BR2_PACKAGE_ALSA_UTILS_AMIXER=y
+BR2_PACKAGE_ALSA_UTILS_APLAY=y
