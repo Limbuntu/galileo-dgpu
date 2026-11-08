@@ -32,11 +32,11 @@ placeholders. The GitHub matrix builds `desktop` and `workstation`.
 
 ## Hardware
 
-| Board on the GPU | Back side |
+| The board and two cards | Back side |
 |---|---|
-| ![Galileo Gen 2 mounted on a discrete GPU](docs/galileo/board-with-radeon.jpg) | ![Back of the board](docs/galileo/board-back.jpg) |
-| **Board, card and power supply** | **The whole bench** |
-| ![Board on the GPU with the PSU](docs/galileo/rig-front.jpg) | ![Desk with monitor, GPU and PSU](docs/galileo/rig-desk.jpg) |
+| ![The Galileo Gen 2 board and two graphics cards](docs/galileo/board-with-radeon.jpg) | ![Back of the board](docs/galileo/board-back.jpg) |
+| **Board, cards and power supply** | **The whole bench** |
+| ![Board, graphics cards and PSU](docs/galileo/rig-front.jpg) | ![Desk with monitor, GPU and PSU](docs/galileo/rig-desk.jpg) |
 
 ![Desktop session on the board](docs/galileo/desktop.jpg)
 
