@@ -47,7 +47,17 @@ password `<board-password>`==>password `<board-password>`
 password <board-password>==>password <board-password>
 GITEA-PRIVATE==>GITEA-PRIVATE
 BOARD-IP==>BOARD-IP
+track-a==>track-a
+track-b==>track-b
+the artist==>the artist
 EOF
+
+# Commercial game material: the launchers, icons and per-game desktop entries
+# that used to sit in the dosbox overlay, the staged data, and the old Windows
+# overlay that carried them. Scoped to board/intel/galileo/ so buildroot's own
+# nfs-utils / wolfssl / mc packages are untouched. Doom is absent on purpose:
+# Freedoom and this repo's KMS backend are free software.
+GAME_RE='(?i)^board/intel/galileo/.*(pal95|pal_dos|san5|sgz5|simcity|sc2000|civ1|nfs|redalert|ra1|war2|warcraft|tomb|quake|duke|wolf|homm|heroes|prince|pop|dune2|xys2|jinyong|uw2|msfs|minecraft|gta)'
 
 echo "== filtering history"
 git filter-repo --force --invert-paths \
@@ -59,7 +69,7 @@ git filter-repo --force --invert-paths \
 	--path board/intel/galileo/rootfs_overlay_workstation/root/mc \
 	--path board/intel/galileo/rootfs_overlay_v4/root/mc \
 	--path board/intel/galileo/rootfs_overlay_v4/root/Desktop/minecraft.desktop \
-	--path-regex 'minecraft' \
+	--path-regex "$GAME_RE" \
 	--replace-text "$WORK/replace.txt" \
 	--message-callback '
 for _old, _new in ((b"root@<board-ip>", b"root@<board-ip>"),
@@ -70,14 +80,15 @@ return message' >/dev/null
 
 echo "== checking the result"
 bad_paths=$(git ls-tree -r --name-only HEAD |
-	grep -E 'usr/share/dosgames/|dosgames-assets/|^images/|^\.gitea/|minecraft|/root/mc/' || true)
+	grep -E 'usr/share/dosgames/|dosgames-assets/|^images/|^\.gitea/|/root/mc/' || true)
+bad_paths="$bad_paths$(git ls-tree -r --name-only HEAD | grep -E "$GAME_RE" || true)"
 [ -z "$bad_paths" ] || { echo "push-github: filtered tree still has:" >&2; echo "$bad_paths" >&2; exit 1; }
 
 big=$(git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectsize)' |
 	awk '$1=="blob" && $2 > 50000000' | head -1)
 [ -z "$big" ] || { echo "push-github: a blob over 50 MB survived the filter" >&2; exit 1; }
 
-leak=$(git grep -I -n -E '192\.168\.12[36]\.|sshpass -p <board-password>|password `<board-password>`' $(git rev-list --all) -- 2>/dev/null | head -5 || true)
+leak=$(git grep -I -n -E '192\.168\.12[36]\.|sshpass -p <board-password>|password `<board-password>`|the artist|track-a|track-b' $(git rev-list --all) -- 2>/dev/null | head -5 || true)
 [ -z "$leak" ] || { echo "push-github: address or password still in history:" >&2; echo "$leak" >&2; exit 1; }
 
 leak=$(git log --all --format='%B' | grep -nE '192\.168\.12[36]\.' | head -5 || true)
