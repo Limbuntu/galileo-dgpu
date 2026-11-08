@@ -16,9 +16,9 @@ FILE="${1:-/root/media/bbb_hw.mp4}"
 sleep 2
 
 # openvt switches to VT1 but does not hand the VT over as controlling
-# terminal; without that mpv never sees a keystroke. vtplay does the
-# TIOCSCTTY for stdin, then execs mpv in the foreground.
-openvt -c 1 -s -w -- /usr/bin/vtplay /dev/tty1 /usr/bin/env \
+# terminal; without that mpv never sees a keystroke. busybox's cttyhack does
+# the TIOCSCTTY on stdin before exec, which is all this needs.
+openvt -c 1 -s -w -- /bin/busybox cttyhack /usr/bin/env \
 	LIBVA_DRIVER_NAME=radeonsi LIBVA_DRIVERS_PATH=/usr/lib/dri \
 	VDPAU_DRIVER=radeonsi /usr/bin/mpv \
 	--fs --input-conf=/etc/mpv-kms.conf --osd-level=1 --really-quiet \
