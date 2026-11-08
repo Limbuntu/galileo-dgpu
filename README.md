@@ -8,13 +8,12 @@ and a browser — with any one of three discrete GPUs driving the display.
 
 ## Image Lineup
 
-Three images. One defconfig, one overlay layer, standard names.
+Two images. One defconfig, one overlay layer, standard names.
 
 | defconfig | Image | Contents | Rootfs |
 |---|---|---|---|
 | `galileo_desktop` | desktop | X + openbox + pcmanfm + the GPU media stack (VA-API/UVD 4K decode, mpv, ffplay) | 3000M |
 | `galileo_workstation` | workstation | desktop + NetSurf + OpenTTD/Doom/OpenArena + glmark2/gtkperf/mesa-demos | 3000M |
-| `galileo_dosbox` | dosbox | fbcon only (no X): DOSBox 0.74-3 + console menu; game data comes from the private volume | 3600M |
 
 Naming convention — do not invent new suffixes:
 
@@ -23,31 +22,11 @@ Naming convention — do not invent new suffixes:
 | common | `board/intel/galileo/rootfs_overlay_common` |
 | desktop | `board/intel/galileo/rootfs_overlay_desktop` (X session, shared by desktop + workstation) |
 | workstation | `board/intel/galileo/rootfs_overlay_workstation` (apps/bench extras on top of desktop) |
-| dosbox | `board/intel/galileo/rootfs_overlay_dosbox` (overrides the X session with the fbcon menu) |
 
-Two remotes, two histories. `buildserver` (Gitea, private) has the full tree and
-the game-data stage; `github` gets a filtered export through
-`tools/push-github.sh` — no game data, no old images, no vendor CI, and board
-addresses/passwords replaced by placeholders. The GitHub matrix builds
-`desktop` and `workstation`; the Gitea runner builds all three images and is the
-only one that mounts the `galileo-games` volume, so its dosbox image is the one
-with games in it.
-
-## DOS image (`galileo_dosbox`)
-
-Boots into a framebuffer-console menu on tty1; picking a number runs
-`dosgame <key>`, which mounts one directory and starts DOSBox fullscreen through
-SDL's fbcon driver. There is no X, no window manager and no getty on tty1: `q`
-drops to a shell and `exit` brings the menu back.
-
-Nothing in the repository says what those directories contain — the menu is a
-launcher, the titles are whatever the data volume provides. Game data is
-multi-GB third-party media and is never in git: it is staged into
-`usr/share/dosgames/` on the build host and reaches the CI runner through the
-`galileo-games` volume (`tools/push-dosgames.sh`), which the build copies into
-the overlay. A key whose directory is missing exits at once with
-`dosgame: <key>: <file> not found`, so an image built without the volume still
-boots to the menu. That is why the partition is 3600M.
+Two remotes, two histories. `buildserver` (Gitea, private) keeps the full tree;
+`github` gets a filtered export through `tools/push-github.sh` — no third-party
+media, no old images, no vendor CI, and board addresses/passwords replaced by
+placeholders. The GitHub matrix builds `desktop` and `workstation`.
 
 ## 4K video (A card, VA-API/UVD)
 
@@ -67,9 +46,8 @@ without a copy through X.
 - Packages: `libva`, Mesa `radeonsi`+`LLVM`+`EGL`+`VDPAU`, `libvdpau`, `mpv`,
   `ffmpeg`(+`ffplay`, SDL2/X11) — in `galileo_desktop_defconfig` and
   `galileo_workstation_defconfig` alike.
-- Clips live in `/root/media` on the board, not in the image (same rule as the
-  game data); `media-console` prints the duration it reads back through
-  `ffmpeg -i`.
+- Clips live in `/root/media` on the board, not in the image; `media-console`
+  prints the duration it reads back through `ffmpeg -i`.
 
 ## System Stack
 
@@ -83,21 +61,18 @@ without a copy through X.
 | Firmware | `amdgpu/polaris10*` (trimmed), whole `radeon/` (Caicos etc.), `nvidia/` |
 | Desktop | openbox + lxpanel + pcmanfm (double-click launchers, XDG menu) |
 | Browser | NetSurf 3.10 (GTK2, HTTPS) — workstation image only |
-| Sound | ALSA + DOSBox SB16 (base 220h, IRQ 7, DMA 1, HDMA 5) + ALSA MIDI |
+| Sound | ALSA (SB16 emulation base 220h, IRQ 7, DMA 1, HDMA 5) + MIDI |
 | Utilities | links2, lspci, neofetch, wqy CJK fonts, HTTP time sync |
 
 ## Key Files
 
-- `configs/galileo_{desktop,workstation,dosbox}_defconfig` — buildroot package selection
+- `configs/galileo_{desktop,workstation}_defconfig` — buildroot package selection
 - `board/intel/galileo/linux-rx580.config` — kernel config (non-DC radeon path; Quark has no SSE2)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf, init scripts, golden files
-- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — mount + launch table for the DOS entries
-- `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox defaults
 - `board/intel/galileo/post-build.sh` — minplayer install, gconv (iconv), amdgpu firmware trim
 - `board/intel/galileo/minplayer/` — VA-API/EGL/KMS player source, build script, i586 binary
 - `board/intel/galileo/rootfs_overlay_desktop/usr/bin/media-console` — on-board media menu (4K entries)
 - `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip numbers and the full benchmark procedure
-- `package/dosbox/` — DOSBox 0.74-3 (SDL detection fix, libglu dep)
 - `package/netsurf/` — browser patches
 - `package/openjdk-bin/`, `package/openjdk/` — aarch64 host + X11 AWT patches
 - `package/llvm/` — benchmark disabled (host build fix)
@@ -115,8 +90,8 @@ Single image, locally:
 ```sh
 docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
   -e FORCE_UNSAFE_CONFIGURE=1 gres-builder sh -c '
-    make O=/out/dosbox BR2_DL_DIR=/out/dl galileo_dosbox_defconfig &&
-    make O=/out/dosbox BR2_DL_DIR=/out/dl -j$(nproc)'
+    make O=/out/desktop BR2_DL_DIR=/out/dl galileo_desktop_defconfig &&
+    make O=/out/desktop BR2_DL_DIR=/out/dl -j$(nproc)'
 ```
 
 ## BIOS bring-up (experimental)
@@ -146,7 +121,3 @@ payload); the SPI write and boot still need hardware validation. See
 - glibc images need gconv modules or iconv/g_convert break (openbox "Unnamed Window" titles)
 - XDG menus need `<DefaultAppDirs/>` in the XML and `lxde-applications.menu` naming
 - MIT-SHM requires `image->data = shmaddr` after `shmat`
-- DOSBox may need a directory mounted twice (`C:` and `-t cdrom` with a `-label`) when the
-  program insists on an inserted disc
-- Some DOS programs refuse a `[Sound] Card=` value outside their own table — the launcher
-  ships the value the setup utility wrote

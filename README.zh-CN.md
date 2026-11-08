@@ -8,28 +8,16 @@
 
 ## 镜像阵容
 
-GitHub CI 只构建 `desktop` 与 `workstation`;`dosbox` 只在私有 Gitea runner 上构建
-(它需要 `galileo-games` 卷里的游戏数据)。
+GitHub CI 构建 `desktop` 与 `workstation`;`buildserver`(Gitea,私有)保留完整
+仓库,`github` 只收 `tools/push-github.sh` 过滤后的导出版本——没有第三方媒体、
+没有旧镜像、没有厂商 CI,板子地址与密码一律换成占位符。
 
 | 镜像 | 内容 | 根文件系统 |
 |---|---|---|
 | `galileo_desktop` | LXDE 桌面 + GPU media 栈(VA-API/UVD 4K 硬解、mpv、ffplay) | 3000M |
 | `galileo_workstation` | 全功能 Linux:desktop + NetSurf + OpenTTD/Minetest + 跑分工具 + radeonsi | 3000M |
-| `galileo_dosbox` | DOS 机:fbcon + DOSBox 0.74-3 + 控制台菜单(游戏数据来自私有卷) | 3600M |
 
 `galileo_terminal` / `galileo_browser` / `galileo_nvidia` 三个 defconfig 只作参考保留,不再构建。
-
-## DOS 镜像(`galileo_dosbox`)
-
-开机进 tty1 的 fbcon 菜单,按数字执行 `dosgame <key>`:挂载一个目录,全屏起 DOSBox。
-没有 X,没有窗口管理器,`q` 退到 shell,`exit` 回到菜单。
-
-仓库里不描述这些目录里装的是什么——菜单只是启动器,标题由数据卷决定。
-游戏数据本身都是多 GB 的第三方媒体,从不进 git:构建机上先 stage 到
-`usr/share/dosgames/`,再由 `tools/push-dosgames.sh` 推到 CI runner 的
-`galileo-games` 卷,构建时把卷拷进 overlay。目录缺失时 `dosgame` 立即退出并打印
-`dosgame: <key>: <file> not found`,所以没有这个卷的镜像照样能进菜单;
-这也是分区做到 3600M 的原因。
 
 ## 4K 视频(A 卡,VA-API/UVD)
 
@@ -46,7 +34,7 @@ GitHub CI 只构建 `desktop` 与 `workstation`;`dosbox` 只在私有 Gitea runn
 - 依赖包:`libva`、Mesa `radeonsi`+`LLVM`+`EGL`+`VDPAU`、`libvdpau`、`mpv`、
   `ffmpeg`(+`ffplay`,SDL2/X11)——`galileo_desktop_defconfig` 与
   `galileo_workstation_defconfig` 里完全一致。
-- 片源放在板上 `/root/media`,不进镜像(和游戏数据同一条规矩);`media-console`
+- 片源放在板上 `/root/media`,不进镜像;`media-console`
   用 `ffmpeg -i` 现读时长显示在菜单上。
 
 ## 系统栈
@@ -61,19 +49,16 @@ GitHub CI 只构建 `desktop` 与 `workstation`;`dosbox` 只在私有 Gitea runn
 | 固件 | `amdgpu/polaris10*`(裁剪)、完整 `radeon/`(Caicos 等)、`nvidia/` |
 | 桌面 | openbox + lxpanel + pcmanfm(双击启动器、XDG 菜单) |
 | 浏览器 | NetSurf 3.10(GTK2,HTTPS)—— 仅 workstation 镜像 |
-| 声音 | ALSA + DOSBox SB16(base 220h、IRQ 7、DMA 1、HDMA 5)+ ALSA MIDI |
+| 声音 | ALSA(SB16 模拟 base 220h、IRQ 7、DMA 1、HDMA 5)+ MIDI |
 | 工具 | links2、lspci、neofetch、wqy 中文字体、HTTP 对时 |
 
 ## 关键文件
 
-- `configs/galileo_{workstation,dosbox}_defconfig` — buildroot 包选择
+- `configs/galileo_{desktop,workstation}_defconfig` — buildroot 包选择
 - `board/intel/galileo/linux-rx580.config` — 内核配置(非 DC radeon 路径;Quark 无 SSE2)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf、启动脚本、黄金文件
-- `board/intel/galileo/rootfs_overlay_dosbox/usr/bin/dosgame` — DOS 条目的挂载 + 启动表
-- `board/intel/galileo/rootfs_overlay_dosbox/root/.dosbox/dosbox-0.74.conf` — DOSBox 默认配置
 - `board/intel/galileo/post-build.sh` — gconv 安装(iconv)、amdgpu 固件裁剪
 - `board/intel/galileo/BENCHMARKS.md` — SuperPI / 7-Zip 跑分结果与完整测试流程
-- `package/dosbox/` — DOSBox 0.74-3(SDL 探测修复、libglu 依赖)
 
 ## 构建
 
@@ -88,8 +73,8 @@ GitHub CI 只构建 `desktop` 与 `workstation`;`dosbox` 只在私有 Gitea runn
 ```sh
 docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
   -e FORCE_UNSAFE_CONFIGURE=1 gres-builder sh -c '
-    make O=/out/dosbox BR2_DL_DIR=/out/dl galileo_dosbox_defconfig &&
-    make O=/out/dosbox BR2_DL_DIR=/out/dl -j$(nproc)'
+    make O=/out/desktop BR2_DL_DIR=/out/dl galileo_desktop_defconfig &&
+    make O=/out/desktop BR2_DL_DIR=/out/dl -j$(nproc)'
 ```
 
 ## 板子速查
@@ -109,5 +94,3 @@ docker run --rm -v "$PWD":/build -v gres-out:/out -w /build \
 - glibc 镜像缺 gconv 模块则 iconv/g_convert 全崩(openbox 标题变 "Unnamed Window")
 - XDG 菜单 XML 必须含 `<DefaultAppDirs/>`,文件名必须是 `lxde-applications.menu`
 - MIT-SHM 在 `shmat` 后必须设置 `image->data = shmaddr`
-- DOSBox 遇到"要求光盘在场"的程序,同一目录要挂两次(`C:` 和 `-t cdrom -label` 的 D:)
-- 有些 DOS 程序只认它自己 setup 写进配置的 `[Sound] Card=` 值,越界直接退出
