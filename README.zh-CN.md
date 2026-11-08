@@ -29,7 +29,7 @@ GitHub CI 构建 `desktop` 与 `workstation`;`buildserver`(Gitea,私有)保留�
 | <p align="center"><b>主板、显卡与电源</b></p> | <p align="center"><b>整套工作台</b></p> |
 | ![主板、显卡与电源](docs/galileo/rig-front.jpg) | ![显示器、显卡与电源](docs/galileo/rig-desk.jpg) |
 
-![板子上的桌面会话](docs/galileo/desktop.jpg)
+![板子上的桌面会话](docs/galileo/desktop.png)
 
 ## 4K 视频(A 卡,VA-API/UVD)
 

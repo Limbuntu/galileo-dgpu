@@ -38,7 +38,7 @@ placeholders. The GitHub matrix builds `desktop` and `workstation`.
 | <p align="center"><b>Board, cards and power supply</b></p> | <p align="center"><b>The whole bench</b></p> |
 | ![Board, graphics cards and PSU](docs/galileo/rig-front.jpg) | ![Desk with monitor, GPU and PSU](docs/galileo/rig-desk.jpg) |
 
-![Desktop session on the board](docs/galileo/desktop.jpg)
+![Desktop session on the board](docs/galileo/desktop.png)
 
 ## 4K video (A card, VA-API/UVD)
 
