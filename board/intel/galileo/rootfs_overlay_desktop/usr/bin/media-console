@@ -11,6 +11,7 @@ V1="$MEDIA/bbb_vcd.mpg"
 V2="$MEDIA/bbb_light.mpg"
 V3="$MEDIA/bbb_hw.mp4"
 V4="$MEDIA/bbb_4k30_30s.mp4"
+BA="$MEDIA/Bad Apple 4K60 HEVC + adaptive framecounter v4.mp4"
 
 meta() {
 	# no ffprobe in the image: parse "Duration: HH:MM:SS.xx" from ffmpeg
@@ -34,9 +35,9 @@ while :; do
 	printf '    \033[1;33m3)\033[0m Big Buck Bunny  H.264 + GPU decode    \033[2m%s\033[0m\n' "$(fmt "$(meta "$V3")")"
 	printf '    \033[1;33m4)\033[0m Big Buck Bunny  KMS direct (no X)     \033[2m%s\033[0m\n' "$(fmt "$(meta "$V3")")"
 	printf '    \033[1;33m5)\033[0m Pre-baked frames  flip mode (~9%% CPU)\033[2m%s\033[0m\n' "8s loop"
-	printf '    \033[1;33m6)\033[0m Stream 1 min into VRAM (TCP 9000)    \033[2m%s\033[0m\n' "wait for sender"
-	printf '    \033[1;33m7)\033[0m H.264 640x360  UVD zero-copy (live) \033[2m%s\033[0m\n' "10:34"
-	printf '    \033[1;33m8)\033[0m Big Buck Bunny 4K30 (30s, UVD)        \033[2m%s\033[0m\n' "0:30"
+	printf '    \033[1;33m6)\033[0m H.264 640x360  UVD zero-copy (live) \033[2m%s\033[0m\n' "10:34"
+	printf '    \033[1;33m7)\033[0m Big Buck Bunny 4K30 (30s, UVD)        \033[2m%s\033[0m\n' "0:30"
+	printf '    \033[1;33m8)\033[0m Bad Apple 4K60 HEVC (UVD, 4 min)     \033[2m%s\033[0m\n' "$(fmt "$(meta "$BA")")"
 	printf '\n  \033[1;36m----------------------------------------------------------\033[0m\n'
 	printf '  now: %s\n' "$NOW"
 	printf '  s) stop   r) redraw   q) quit\n'
@@ -48,9 +49,9 @@ while :; do
 	3) stop_all; setsid env DISPLAY=:0 VDPAU_DRIVER=radeonsi mpv --no-config --really-quiet --hwdec=vdpau --vo=vdpau --geometry=640x360 "$V3" >/dev/null 2>&1 & NOW="video: bbb_hw.mp4 (H.264, vdpau)" ;;
 	4) stop_all; setsid /usr/bin/kms-player "$V3" >/dev/null 2>&1 & NOW="KMS direct mode (Enter/Space returns to desktop)" ;;
 	5) stop_all; setsid /usr/bin/flip-demo >/dev/null 2>&1 & NOW="flip mode: frames already in VRAM" ;;
-	6) stop_all; setsid /usr/bin/stream-demo 9000 >/dev/null 2>&1 & NOW="streaming: waiting on tcp/9000 (any key returns)" ;;
-	7) stop_all; setsid /usr/bin/minplayer-demo "$V3" 640 >/dev/null 2>&1 & NOW="H.264 640x360 UVD zero-copy (any key returns)" ;;
-	8) stop_all; setsid /usr/bin/minplayer-demo "$V4" 30 >/dev/null 2>&1 & NOW="4K30 UVD zero-copy (any key returns)" ;;
+	6) stop_all; setsid /usr/bin/minplayer-demo "$V3" 640 >/dev/null 2>&1 & NOW="H.264 640x360 UVD zero-copy (any key returns)" ;;
+	7) stop_all; setsid /usr/bin/minplayer-demo "$V4" 30 >/dev/null 2>&1 & NOW="4K30 UVD zero-copy (any key returns)" ;;
+	8) stop_all; setsid /usr/bin/minplayer-demo "$BA" 240 >/dev/null 2>&1 & NOW="Bad Apple 4K60 HEVC (any key returns)" ;;
 	s) stop_all; NOW="stopped" ;;
 	r) : ;;
 	q) stop_all; break ;;
