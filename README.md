@@ -96,7 +96,7 @@ without a copy through X.
 ## Key Files
 
 - `configs/galileo_{desktop,workstation}_defconfig` — buildroot package selection
-- `board/intel/galileo/linux-rx580.config` — kernel config (non-DC radeon path; Quark has no SSE2)
+- `board/intel/galileo/linux-rx580.config` — kernel config (amdgpu with Display Core; Quark has no SSE2, so the DCN/DML paths stay off)
 - `board/intel/galileo/rootfs_overlay*/` — xorg.conf, init scripts, golden files
 - `board/intel/galileo/post-build.sh` — minplayer install, gconv (iconv), amdgpu firmware trim
 - `board/intel/galileo/minplayer/` — VA-API/EGL/KMS player source, build script, i586 binary

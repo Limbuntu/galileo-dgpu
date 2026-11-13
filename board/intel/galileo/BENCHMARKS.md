@@ -171,7 +171,7 @@ ssh root@<ip> "chmod +x /usr/bin/pi_css5 /usr/bin/7zr /usr/bin/bench"
 ## 9. GPU 加速后的 2D / 3D 基线（2026-11-05，RX 580 + radeonsi）
 
 环境：Galileo Gen 2 (Quark X1000 400 MHz / 203 MB)，RX 580 2048SP，
-内核 5.10.29（amdgpu，无 DC），Mesa 20.2.2 + LLVM 9.0.1，
+内核 5.10.29（amdgpu + Display Core 3.2.104，`dmesg` 有 `Display Core initialized`），Mesa 20.2.2 + LLVM 9.0.1，
 `glxinfo`：`Accelerated: yes`、`GL 4.6 (Compatibility Profile)`、
 `AMD POLARIS10 (DRM 3.40.0...)`，Xorg `glamor initialized`，显示 1280×1024。
 
@@ -306,3 +306,21 @@ docker run --rm -v gres-out:/out -v "$PWD":/src debian:12 bash -c '
 `/usr/bin/doom` 会先停桌面（DRM master 是独占的），跑 `doomgeneric-kms`，
 退出后 `/etc/init.d/S50desktop start` 把 X + LXDE 整个拉回来。
 `doomgeneric-kms` 每 5 s 往 stdout 打一行 `kms: NN.N fps`（按 page flip 计数）。
+
+## 11. minplayer 4K 播放实测（2026-11-14，RX 580 + DC，scanout 2560x1440@60）
+
+`minplayer-demo <file> <secs>`：X 停掉后走 VA-API → dmabuf → EGL → KMS page flip，
+结果读 `/root/minplayer-result.txt`；`connector 80 crtc 54 mode 2560x1440@60`。
+
+| 源 | 稳态 | CPU |
+|---|---|---|
+| `bbb_hw.mp4` 640×360 H.264 30p | **30.0 fps**（150 帧/5 s，卡在源帧率） | 27% |
+| `bbb_4k30_30s.mp4` 3840×2160 H.264 30p | **30.0 fps**（900 帧/30 s，满帧） | 46% |
+| `Bad Apple … v4.mp4` 3840×2160 HEVC 60p | **27.4 fps**（411 帧/15 s） | 80% |
+
+两个坑：
+
+- **别用 5 秒窗口测**。日志第一行就是 `render 840 ms`（EGL/BO/着色器冷启动），
+  5 秒平均会被首帧吃掉三分之一，4K60 会误测成 14.6 fps；15 秒才是稳态 27.4。
+- 4K30 能满帧、4K60 只有 ~27 fps（约 45% 实时），瓶颈是**每帧 CPU**（4K 下 ~50 ms/帧），
+  不是解码器：同一份 4K 换成 H.264 也只在 30 fps 档，HEVC 60p 才压不住。
