@@ -631,6 +631,7 @@ int main(int argc, char **argv)
 	unsigned long long last_cpu = 0; int have_last_cpu = 0;
 	long long last_wall = 0;
 	int frames_presented = 0;
+	int64_t last_pts = AV_NOPTS_VALUE;
 	int next_fb = 0;
 	int eof = 0;
 	long long t0 = now_ns();
@@ -799,6 +800,7 @@ int main(int argc, char **argv)
 			break;
 		}
 		next_fb = (next_fb + 1) % n_fbs;
+		last_pts = frame->pts;
 		av_frame_unref(frame);   /* release the hw surface back to the pool */
 
 		/* --- pacing to the video fps (by frame index, not pts).
@@ -806,10 +808,16 @@ int main(int argc, char **argv)
 		 * the loop flips faster than the GPU renders and the screen shows
 		 * whatever garbage the scanout buffer happens to contain. --- */
 		{
-			AVRational fr = fmt->streams[vs]->avg_frame_rate;
-			double fps = (fr.num > 0 && fr.den > 0) ?
-				     (double)fr.num / fr.den : 30.0;
-			long long target = t0 + (long long)(frames_presented * 1e9 / fps);
+			/* pace by presentation timestamp, not by frame index: after a slow
+			 * start the index clock is behind and the loop would burst to
+			 * catch up (visible as a speed-up). */
+			AVRational tb = fmt->streams[vs]->time_base;
+			if (frames_presented == 0)
+				t0 = now_ns();   /* start the clock at the first presented frame */
+			long long pts_ms = 0;
+			if (last_pts != AV_NOPTS_VALUE && tb.num > 0 && tb.den > 0)
+				pts_ms = (long long)(last_pts * 1000.0 * tb.num / tb.den);
+			long long target = t0 + pts_ms * 1000000LL;
 			long long d = target - now_ns();
 			if (d > 0 && d < 500000000LL)
 				usleep((useconds_t)(d / 1000));
