@@ -11,7 +11,7 @@ V1="$MEDIA/bbb_vcd.mpg"
 V2="$MEDIA/bbb_light.mpg"
 V3="$MEDIA/bbb_hw.mp4"
 V4="$MEDIA/bbb_4k30_30s.mp4"
-BA="$MEDIA/Bad Apple 4K60 HEVC + adaptive framecounter v4.mp4"
+BA="$MEDIA/Bad Apple 4K30 HEVC + adaptive framecounter v4.mp4"
 
 meta() {
 	# no ffprobe in the image: parse "Duration: HH:MM:SS.xx" from ffmpeg
